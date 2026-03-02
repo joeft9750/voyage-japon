@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Royal Vélizy – Restaurant buffet à volonté à Vélizy-Villacoublay. Cuisine chinoise et japonaise, plus de 80 plats, sushis & makis, wok et grillades." />
+  <meta name="theme-color" content="#C41230" />
+  <title>Royal Vélizy – Buffet Asiatique à Volonté</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Custom Cursor -->
+  <div class="cursor-ring" aria-hidden="true"></div>
+  <div class="cursor-dot" aria-hidden="true"></div>
+
+  <!-- Back to Top -->
+  <button class="back-to-top" aria-label="Retour en haut de page">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polyline points="18 15 12 9 6 15"></polyline>
+    </svg>
+  </button>
+
+  <!-- ══════════════════════════════════════════════════
+       1. NAVIGATION
+  ══════════════════════════════════════════════════ -->
+  <nav id="navbar" role="navigation" aria-label="Navigation principale">
+    <div class="nav-container">
+      <a href="#hero" class="nav-logo" aria-label="Royal Vélizy – Accueil">
+        <span class="logo-royal">ROYAL</span>
+        <span class="logo-velizy">VÉLIZY</span>
+      </a>
+
+      <ul class="nav-links" role="list">
+        <li><a href="a-propos.html" class="nav-link">Notre Histoire</a></li>
+        <li><a href="#menu" class="nav-link">Les Plats</a></li>
+        <li><a href="#buffet" class="nav-link">Buffet</a></li>
+        <li><a href="#gallery" class="nav-link">Galerie</a></li>
+        <li><a href="#contact" class="nav-link">Contact</a></li>
+      </ul>
+
+      <button class="burger" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobile-menu">
+        <span class="burger-bar"></span>
+        <span class="burger-bar"></span>
+        <span class="burger-bar"></span>
+      </button>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobile-menu" role="dialog" aria-label="Menu mobile" aria-modal="true">
+      <ul role="list">
+        <li><a href="a-propos.html" class="mobile-link">Notre Histoire</a></li>
+        <li><a href="#menu" class="mobile-link">Les Plats</a></li>
+        <li><a href="#buffet" class="mobile-link">Buffet</a></li>
+        <li><a href="#gallery" class="mobile-link">Galerie</a></li>
+        <li><a href="#contact" class="mobile-link">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ══════════════════════════════════════════════════
+       2. HERO
+  ══════════════════════════════════════════════════ -->
+  <section id="hero" aria-label="Section principale">
+    <div class="hero-overlay" aria-hidden="true"></div>
+    <div class="particles-container" aria-hidden="true" id="particles"></div>
+
+    <div class="hero-content">
+      <p class="hero-tag">
+        <span class="hero-tag-dot" aria-hidden="true"></span>
+        Vélizy-Villacoublay
+      </p>
+
+      <h1 class="hero-title">
+        <span class="hero-line1">Royal Vélizy</span>
+        <span class="hero-line2">Buffet Asiatique</span>
+        <span class="hero-line3">à Volonté</span>
+      </h1>
+
+      <p class="hero-subtitle">Cuisine Chinoise &amp; Japonaise · Plus de 80 plats</p>
+
+      <div class="hero-ctas">
+        <a href="#buffet" class="btn btn-primary">Voir les Formules</a>
+        <a href="#menu" class="btn btn-outline">Voir les Plats</a>
+      </div>
+    </div>
+
+    <div class="scroll-indicator" aria-hidden="true">
+      <span class="scroll-text">Défiler</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════
+       3. STATS BAND
+  ══════════════════════════════════════════════════ -->
+  <section class="stats-band" aria-label="Chiffres clés">
+    <div class="stats-grid">
+      <div class="stat-item reveal-up">
+        <span class="stat-number" data-target="80" data-suffix="+">80+</span>
+        <span class="stat-label">Plats au Buffet</span>
+      </div>
+      <div class="stat-item reveal-up delay-1">
+        <span class="stat-number" data-target="15" data-suffix="">15</span>
+        <span class="stat-label">Ans d'Expérience</span>
+      </div>
+      <div class="stat-item reveal-up delay-2">
+        <span class="stat-number" data-target="3236" data-suffix="">3 236</span>
+        <span class="stat-label">Avis Clients</span>
+      </div>
+      <div class="stat-item reveal-up delay-3">
+        <span class="stat-number" data-target="100" data-suffix="">100</span>
+        <span class="stat-label">Couverts</span>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════
+       5. LES PLATS DU BUFFET
+  ══════════════════════════════════════════════════ -->
+  <section id="menu" aria-labelledby="menu-title">
+    <div class="section-container">
+      <div class="section-header reveal-up">
+        <span class="section-tag">Buffet à Volonté</span>
+        <h2 id="menu-title" class="section-title">Tout est inclus,<br />servez-vous !</h2>
+        <p class="section-subtitle">Plus de 80 plats disponibles en accès libre — renouvelés tout au long du service</p>
+        <div class="section-divider" aria-hidden="true"></div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="menu-tabs" role="tablist" aria-label="Catégories du buffet">
+        <button class="menu-tab active" role="tab" aria-selected="true" aria-controls="panel-entrees" id="tab-entrees">🥢 Entrées</button>
+        <button class="menu-tab" role="tab" aria-selected="false" aria-controls="panel-chauds" id="tab-chauds">🔥 Plats Chauds</button>
+        <button class="menu-tab" role="tab" aria-selected="false" aria-controls="panel-froids" id="tab-froids">🥗 Plats Froids</button>
+        <button class="menu-tab" role="tab" aria-selected="false" aria-controls="panel-wok" id="tab-wok">🍳 Wok &amp; Grillades</button>
+        <button class="menu-tab" role="tab" aria-selected="false" aria-controls="panel-sushis" id="tab-sushis">🍣 Sushis &amp; Makis</button>
+        <button class="menu-tab" role="tab" aria-selected="false" aria-controls="panel-desserts" id="tab-desserts">🍮 Desserts</button>
+      </div>
+
+      <!-- Panels -->
+      <div class="menu-panels">
+
+        <!-- Entrées -->
+        <div class="menu-panel active" id="panel-entrees" role="tabpanel" aria-labelledby="tab-entrees">
+          <div class="menu-grid">
+            <div class="menu-item"><h3 class="menu-item-name">Rouleaux Impériaux</h3><p class="menu-item-desc">Frits, garnis légumes et porc, sauce aigre-douce</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Nems au Porc</h3><p class="menu-item-desc">Croustillants, sauce nuoc-mâm</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Nems aux Crevettes</h3><p class="menu-item-desc">Frits dorés, sauce soja-citron</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Raviolis Vapeur</h3><p class="menu-item-desc">Dumplings porc et gingembre, sauce soja-sésame</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Soupe Miso</h3><p class="menu-item-desc">Bouillon miso, tofu, algues wakamé</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Soupe Wonton</h3><p class="menu-item-desc">Raviolis chinois dans un bouillon de poule</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Salade d'Algues</h3><p class="menu-item-desc">Wakamé mariné au sésame</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Salade de Concombre</h3><p class="menu-item-desc">Concombre, vinaigre de riz, piment doux</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Bouchées Vapeur Bao</h3><p class="menu-item-desc">Pain vapeur fourré porc laqué</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Brochettes Poulet</h3><p class="menu-item-desc">Marinées au tare, grillées</p></div>
+          </div>
+        </div>
+
+        <!-- Plats Chauds -->
+        <div class="menu-panel" id="panel-chauds" role="tabpanel" aria-labelledby="tab-chauds" hidden>
+          <div class="menu-grid">
+            <div class="menu-item"><h3 class="menu-item-name">Canard Laqué</h3><p class="menu-item-desc">Canard rôti, sauce hoisin</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Poulet à la Sauce Huître</h3><p class="menu-item-desc">Émincé de poulet, légumes, sauce huître</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Porc au Caramel</h3><p class="menu-item-desc">Porc mijoté, caramel de nuoc-mâm</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Bœuf aux Oignons</h3><p class="menu-item-desc">Bœuf sauté, oignons dorés, sauce soja</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Crevettes à la Vapeur</h3><p class="menu-item-desc">Crevettes entières, sauce gingembre</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Travers de Porc Grillés</h3><p class="menu-item-desc">Marinés au miel et sauce barbecue asiatique</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Riz Cantonnais</h3><p class="menu-item-desc">Riz sauté à l'œuf, petits pois, porc et crevettes</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Nouilles Sautées</h3><p class="menu-item-desc">Nouilles chinoises, légumes, sauce teriyaki</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Calmars Sautés</h3><p class="menu-item-desc">Sautés au piment doux et basilic</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Tofu Sauté</h3><p class="menu-item-desc">Tofu ferme, légumes croquants, sauce sésame</p></div>
+          </div>
+        </div>
+
+        <!-- Plats Froids -->
+        <div class="menu-panel" id="panel-froids" role="tabpanel" aria-labelledby="tab-froids" hidden>
+          <div class="menu-grid">
+            <div class="menu-item"><h3 class="menu-item-name">Salade de Vermicelles</h3><p class="menu-item-desc">Vermicelles de riz, légumes râpés, vinaigrette asiatique</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Salade Thaï au Poulet</h3><p class="menu-item-desc">Poulet effiloché, citronelle, menthe, cacahuètes</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Salade de Chou Chinois</h3><p class="menu-item-desc">Chou, carottes, sésame grillé</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Plateau de Crudités</h3><p class="menu-item-desc">Légumes frais de saison, sauce soja douce</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Salade de Méduses</h3><p class="menu-item-desc">Méduses marinées, sésame, huile parfumée</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Crevettes en Gelée</h3><p class="menu-item-desc">Crevettes froides, sauce cocktail asiatique</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Poulet Froid Sauce Cacahuète</h3><p class="menu-item-desc">Blanc de poulet, sauce satay</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Salade de Fruits Exotiques</h3><p class="menu-item-desc">Mangue, ananas, litchi, gingembre confit</p></div>
+          </div>
+        </div>
+
+        <!-- Wok & Grillades -->
+        <div class="menu-panel" id="panel-wok" role="tabpanel" aria-labelledby="tab-wok" hidden>
+          <div class="menu-grid">
+            <div class="menu-item"><h3 class="menu-item-name">Wok Bœuf Légumes</h3><p class="menu-item-desc">Bœuf émincé, légumes croquants, sauce huître</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Wok Crevettes Thaï</h3><p class="menu-item-desc">Crevettes, piment, basilic thaï, citronelle</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Wok Poulet Gingembre</h3><p class="menu-item-desc">Poulet, gingembre frais, brocolis, sauce soja</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Wok Porc Sucré-Salé</h3><p class="menu-item-desc">Porc, poivrons multicolores, ananas, sauce aigre-douce</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Wok Légumes du Marché</h3><p class="menu-item-desc">Légumes frais de saison sautés au wok</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Bœuf à la Citronnelle</h3><p class="menu-item-desc">Émincé de bœuf, citronnelle, piment vert</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Calmars au Wok</h3><p class="menu-item-desc">Calmars, poivrons, sauce noire de haricots</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Bœuf Mongolien</h3><p class="menu-item-desc">Bœuf tendre, oignons, sauce soja-brun épaisse</p></div>
+          </div>
+        </div>
+
+        <!-- Sushis & Makis -->
+        <div class="menu-panel" id="panel-sushis" role="tabpanel" aria-labelledby="tab-sushis" hidden>
+          <div class="menu-grid">
+            <div class="menu-item"><h3 class="menu-item-name">Sashimi Saumon</h3><p class="menu-item-desc">Tranches de saumon frais, wasabi, gingembre mariné</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Sashimi Thon</h3><p class="menu-item-desc">Thon rouge, wasabi, sauce soja</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Nigiri Saumon</h3><p class="menu-item-desc">Riz vinaigré, tranche de saumon frais</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Nigiri Thon</h3><p class="menu-item-desc">Riz vinaigré, tranche de thon</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Nigiri Crevette</h3><p class="menu-item-desc">Riz vinaigré, crevette tempura</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Maki Saumon</h3><p class="menu-item-desc">Riz, nori, saumon</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Maki Thon</h3><p class="menu-item-desc">Riz, nori, thon</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Maki Concombre</h3><p class="menu-item-desc">Riz, nori, concombre frais</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">California Saumon-Avocat</h3><p class="menu-item-desc">Riz enrobé, saumon, avocat crémeux</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">California Surimi</h3><p class="menu-item-desc">Surimi, avocat, concombre, tobiko</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Spicy Tuna Roll</h3><p class="menu-item-desc">Thon, sriracha, concombre, oignons frits</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Temaki Saumon</h3><p class="menu-item-desc">Cornet de nori, saumon, avocat, riz</p></div>
+          </div>
+        </div>
+
+        <!-- Desserts -->
+        <div class="menu-panel" id="panel-desserts" role="tabpanel" aria-labelledby="tab-desserts" hidden>
+          <div class="menu-grid">
+            <div class="menu-item"><h3 class="menu-item-name">Mochi Matcha</h3><p class="menu-item-desc">Boule de riz gluant, glace matcha</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Mochi Fraise</h3><p class="menu-item-desc">Boule de riz gluant, glace fraise</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Beignets Banane</h3><p class="menu-item-desc">Banane enrobée, dorée à la friture, miel</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Beignets Ananas</h3><p class="menu-item-desc">Ananas frit caramélisé, sauce caramel</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Crème au Matcha</h3><p class="menu-item-desc">Dessert lacté au thé vert japonais</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Gâteau aux Amandes</h3><p class="menu-item-desc">Moelleux aux amandes, léger et fondant</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Perles du Japon</h3><p class="menu-item-desc">Tapioca au lait de coco et mangue</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Glaces Artisanales</h3><p class="menu-item-desc">Litchi, mangue, sésame noir, vanille</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Fruits Frais de Saison</h3><p class="menu-item-desc">Sélection de fruits frais exotiques</p></div>
+            <div class="menu-item"><h3 class="menu-item-name">Fondant Chocolat</h3><p class="menu-item-desc">Chocolat noir 70%, cœur coulant</p></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════
+       6. BUFFET À VOLONTÉ
+  ══════════════════════════════════════════════════ -->
+  <section id="buffet" aria-labelledby="buffet-title">
+    <div class="section-container buffet-grid">
+      <!-- Text Column -->
+      <div class="buffet-text-col reveal-left">
+        <span class="section-tag">Buffet à Volonté</span>
+        <h2 id="buffet-title" class="section-title">L'Abondance<br />Sans Limites</h2>
+        <div class="section-divider" aria-hidden="true"></div>
+        <p class="buffet-paragraph">
+          Un prix unique, tout inclus : plus de 80 plats chauds et froids en accès illimité, renouvelés en permanence. Des entrées aux desserts, mangez autant que vous le souhaitez.
+        </p>
+
+        <div class="buffet-prices" role="list">
+          <div class="price-card reveal-up delay-1" role="listitem">
+            <span class="price-label">Midi Semaine</span>
+            <span class="price-amount">15,50&nbsp;€</span>
+            <span class="price-note">Lun – Ven, 11h30–14h30</span>
+          </div>
+          <div class="price-card reveal-up delay-2" role="listitem">
+            <span class="price-label">Soir Semaine</span>
+            <span class="price-amount">21,90&nbsp;€</span>
+            <span class="price-note">Lun – Ven, 18h30–22h30</span>
+          </div>
+          <div class="price-card featured reveal-up delay-3" role="listitem">
+            <span class="price-label">Week-end &amp; Fériés</span>
+            <span class="price-amount">22,90&nbsp;€</span>
+            <span class="price-note">Sam, Dim &amp; Jours Fériés</span>
+          </div>
+        </div>
+
+        <a href="#contact" class="btn btn-primary">Nous Contacter</a>
+      </div>
+
+      <!-- Visual Column -->
+      <div class="buffet-visual-col reveal-right">
+        <div class="buffet-cards" role="list">
+          <div class="buffet-card" role="listitem">
+            <span class="buffet-card-icon" aria-hidden="true">🍜</span>
+            <h3 class="buffet-card-title">Entrées</h3>
+            <p class="buffet-card-desc">Rouleaux, nems, raviolis vapeur, salades asiatiques et soupes maison</p>
+          </div>
+          <div class="buffet-card" role="listitem">
+            <span class="buffet-card-icon" aria-hidden="true">🍣</span>
+            <h3 class="buffet-card-title">Sushis &amp; Makis</h3>
+            <p class="buffet-card-desc">Préparés à la minute par notre chef sushiman, saumon, thon, avocat</p>
+          </div>
+          <div class="buffet-card" role="listitem">
+            <span class="buffet-card-icon" aria-hidden="true">🔥</span>
+            <h3 class="buffet-card-title">Wok &amp; Grillades</h3>
+            <p class="buffet-card-desc">Bœuf, canard, crevettes, poulet sautés aux légumes croquants du jour</p>
+          </div>
+          <div class="buffet-card" role="listitem">
+            <span class="buffet-card-icon" aria-hidden="true">🍮</span>
+            <h3 class="buffet-card-title">Desserts</h3>
+            <p class="buffet-card-desc">Mochis, beignets, crèmes asiatiques, fruits frais et glaces artisanales</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════
+       7. GALERIE – CAROUSELS PAR CATÉGORIE
+  ══════════════════════════════════════════════════ -->
+  <section id="gallery" aria-labelledby="gallery-title">
+    <div class="section-container">
+      <div class="section-header reveal-up">
+        <span class="section-tag">Galerie</span>
+        <h2 id="gallery-title" class="section-title">L'Art dans l'Assiette</h2>
+        <p class="section-subtitle">Parcourez nos plats par catégorie — cliquez sur une photo pour l'agrandir</p>
+        <div class="section-divider" aria-hidden="true"></div>
+      </div>
+
+      <!-- Category Tabs -->
+      <div class="gallery-cats" role="tablist" aria-label="Catégories de la galerie">
+        <button class="gallery-cat-btn active" role="tab" aria-selected="true" data-cat="entrees">🥢 Entrées</button>
+        <button class="gallery-cat-btn" role="tab" aria-selected="false" data-cat="chauds">🔥 Plats Chauds</button>
+        <button class="gallery-cat-btn" role="tab" aria-selected="false" data-cat="froids">🥗 Plats Froids</button>
+        <button class="gallery-cat-btn" role="tab" aria-selected="false" data-cat="wok">🍳 Wok</button>
+        <button class="gallery-cat-btn" role="tab" aria-selected="false" data-cat="sushis">🍣 Sushis &amp; Makis</button>
+        <button class="gallery-cat-btn" role="tab" aria-selected="false" data-cat="desserts">🍮 Desserts</button>
+      </div>
+
+    </div><!-- end section-container for header -->
+
+    <!-- Carousels (full-width) -->
+
+    <!-- Entrées -->
+    <div class="gallery-carousel active" id="carousel-entrees" role="tabpanel" aria-label="Galerie Entrées">
+      <button class="gallery-nav-btn gallery-nav-prev" aria-label="Plats précédents">&#8249;</button>
+      <button class="gallery-nav-btn gallery-nav-next" aria-label="Plats suivants">&#8250;</button>
+      <div class="carousel-track-wrap">
+        <div class="carousel-track">
+          <div class="carousel-slide" data-name="Rouleaux Impériaux" data-img="" data-emoji="🥢" tabindex="0" aria-label="Voir : Rouleaux Impériaux">
+            <div class="slide-img" style="background:linear-gradient(135deg,#2a0010,#5a1020,#2a0808)"><span class="slide-emoji" aria-hidden="true">🥢</span></div>
+            <div class="slide-overlay"><span class="slide-name">Rouleaux Impériaux</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Nems au Porc" data-img="" data-emoji="🥟" tabindex="0" aria-label="Voir : Nems au Porc">
+            <div class="slide-img" style="background:linear-gradient(135deg,#2a1505,#5a3010,#3a2005)"><span class="slide-emoji" aria-hidden="true">🥟</span></div>
+            <div class="slide-overlay"><span class="slide-name">Nems au Porc</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Raviolis Vapeur" data-img="" data-emoji="🫕" tabindex="0" aria-label="Voir : Raviolis Vapeur">
+            <div class="slide-img" style="background:linear-gradient(135deg,#0a1a2a,#1a3a4a,#0a2a3a)"><span class="slide-emoji" aria-hidden="true">🫕</span></div>
+            <div class="slide-overlay"><span class="slide-name">Raviolis Vapeur</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Soupe Miso" data-img="" data-emoji="🍜" tabindex="0" aria-label="Voir : Soupe Miso">
+            <div class="slide-img" style="background:linear-gradient(135deg,#1a1005,#3a2510,#2a1a05)"><span class="slide-emoji" aria-hidden="true">🍜</span></div>
+            <div class="slide-overlay"><span class="slide-name">Soupe Miso</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Salade d'Algues" data-img="" data-emoji="🌿" tabindex="0" aria-label="Voir : Salade d'Algues">
+            <div class="slide-img" style="background:linear-gradient(135deg,#0a1a0a,#1a3a1a,#0a2a0a)"><span class="slide-emoji" aria-hidden="true">🌿</span></div>
+            <div class="slide-overlay"><span class="slide-name">Salade d'Algues</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Brochettes Poulet" data-img="" data-emoji="🍢" tabindex="0" aria-label="Voir : Brochettes Poulet">
+            <div class="slide-img" style="background:linear-gradient(135deg,#2a1a05,#4a2a10,#3a2010)"><span class="slide-emoji" aria-hidden="true">🍢</span></div>
+            <div class="slide-overlay"><span class="slide-name">Brochettes Poulet</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Plats Chauds -->
+    <div class="gallery-carousel" id="carousel-chauds" role="tabpanel" aria-label="Galerie Plats Chauds" hidden>
+      <button class="gallery-nav-btn gallery-nav-prev" aria-label="Plats précédents">&#8249;</button>
+      <button class="gallery-nav-btn gallery-nav-next" aria-label="Plats suivants">&#8250;</button>
+      <div class="carousel-track-wrap">
+        <div class="carousel-track">
+          <div class="carousel-slide" data-name="Canard Laqué" data-img="" data-emoji="🦆" tabindex="0" aria-label="Voir : Canard Laqué">
+            <div class="slide-img" style="background:linear-gradient(135deg,#3a0808,#6a1010,#4a0a0a)"><span class="slide-emoji" aria-hidden="true">🦆</span></div>
+            <div class="slide-overlay"><span class="slide-name">Canard Laqué</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Poulet Sauce Huître" data-img="" data-emoji="🍗" tabindex="0" aria-label="Voir : Poulet Sauce Huître">
+            <div class="slide-img" style="background:linear-gradient(135deg,#2a1a05,#5a3510,#3a2508)"><span class="slide-emoji" aria-hidden="true">🍗</span></div>
+            <div class="slide-overlay"><span class="slide-name">Poulet Sauce Huître</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Porc au Caramel" data-img="" data-emoji="🥩" tabindex="0" aria-label="Voir : Porc au Caramel">
+            <div class="slide-img" style="background:linear-gradient(135deg,#2a1505,#4a2a0a,#3a1a05)"><span class="slide-emoji" aria-hidden="true">🥩</span></div>
+            <div class="slide-overlay"><span class="slide-name">Porc au Caramel</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Crevettes Vapeur" data-img="" data-emoji="🦐" tabindex="0" aria-label="Voir : Crevettes Vapeur">
+            <div class="slide-img" style="background:linear-gradient(135deg,#1a0a1a,#3a1a3a,#2a0a2a)"><span class="slide-emoji" aria-hidden="true">🦐</span></div>
+            <div class="slide-overlay"><span class="slide-name">Crevettes Vapeur</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Riz Cantonais" data-img="" data-emoji="🍚" tabindex="0" aria-label="Voir : Riz Cantonais">
+            <div class="slide-img" style="background:linear-gradient(135deg,#1a1a0a,#3a3a1a,#2a2a0a)"><span class="slide-emoji" aria-hidden="true">🍚</span></div>
+            <div class="slide-overlay"><span class="slide-name">Riz Cantonais</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Travers de Porc" data-img="" data-emoji="🍖" tabindex="0" aria-label="Voir : Travers de Porc">
+            <div class="slide-img" style="background:linear-gradient(135deg,#2a0808,#5a1010,#3a0a0a)"><span class="slide-emoji" aria-hidden="true">🍖</span></div>
+            <div class="slide-overlay"><span class="slide-name">Travers de Porc</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Plats Froids -->
+    <div class="gallery-carousel" id="carousel-froids" role="tabpanel" aria-label="Galerie Plats Froids" hidden>
+      <button class="gallery-nav-btn gallery-nav-prev" aria-label="Plats précédents">&#8249;</button>
+      <button class="gallery-nav-btn gallery-nav-next" aria-label="Plats suivants">&#8250;</button>
+      <div class="carousel-track-wrap">
+        <div class="carousel-track">
+          <div class="carousel-slide" data-name="Salade Thaï Poulet" data-img="" data-emoji="🥗" tabindex="0" aria-label="Voir : Salade Thaï Poulet">
+            <div class="slide-img" style="background:linear-gradient(135deg,#0a1a0a,#1a3a1a,#0a2a12)"><span class="slide-emoji" aria-hidden="true">🥗</span></div>
+            <div class="slide-overlay"><span class="slide-name">Salade Thaï Poulet</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Salade Vermicelles" data-img="" data-emoji="🫙" tabindex="0" aria-label="Voir : Salade Vermicelles">
+            <div class="slide-img" style="background:linear-gradient(135deg,#1a1a0a,#3a3a1a,#2a2a10)"><span class="slide-emoji" aria-hidden="true">🫙</span></div>
+            <div class="slide-overlay"><span class="slide-name">Salade Vermicelles</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Salade de Méduses" data-img="" data-emoji="🌊" tabindex="0" aria-label="Voir : Salade de Méduses">
+            <div class="slide-img" style="background:linear-gradient(135deg,#0a0a2a,#1a1a4a,#0a1a3a)"><span class="slide-emoji" aria-hidden="true">🌊</span></div>
+            <div class="slide-overlay"><span class="slide-name">Salade de Méduses</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Crevettes Froides" data-img="" data-emoji="🦐" tabindex="0" aria-label="Voir : Crevettes Froides">
+            <div class="slide-img" style="background:linear-gradient(135deg,#1a0a1a,#3a1535,#2a0a28)"><span class="slide-emoji" aria-hidden="true">🦐</span></div>
+            <div class="slide-overlay"><span class="slide-name">Crevettes Froides</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Salade Chou Chinois" data-img="" data-emoji="🥬" tabindex="0" aria-label="Voir : Salade Chou Chinois">
+            <div class="slide-img" style="background:linear-gradient(135deg,#051a08,#0a3012,#081a0a)"><span class="slide-emoji" aria-hidden="true">🥬</span></div>
+            <div class="slide-overlay"><span class="slide-name">Salade Chou Chinois</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wok & Grillades -->
+    <div class="gallery-carousel" id="carousel-wok" role="tabpanel" aria-label="Galerie Wok et Grillades" hidden>
+      <button class="gallery-nav-btn gallery-nav-prev" aria-label="Plats précédents">&#8249;</button>
+      <button class="gallery-nav-btn gallery-nav-next" aria-label="Plats suivants">&#8250;</button>
+      <div class="carousel-track-wrap">
+        <div class="carousel-track">
+          <div class="carousel-slide" data-name="Wok Bœuf Légumes" data-img="" data-emoji="🥢" tabindex="0" aria-label="Voir : Wok Bœuf Légumes">
+            <div class="slide-img" style="background:linear-gradient(135deg,#2a0808,#501010,#3a0a0a)"><span class="slide-emoji" aria-hidden="true">🥢</span></div>
+            <div class="slide-overlay"><span class="slide-name">Wok Bœuf Légumes</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Wok Crevettes Thaï" data-img="" data-emoji="🍳" tabindex="0" aria-label="Voir : Wok Crevettes Thaï">
+            <div class="slide-img" style="background:linear-gradient(135deg,#1a0a1a,#3a153a,#280a28)"><span class="slide-emoji" aria-hidden="true">🍳</span></div>
+            <div class="slide-overlay"><span class="slide-name">Wok Crevettes Thaï</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Wok Poulet Gingembre" data-img="" data-emoji="🔥" tabindex="0" aria-label="Voir : Wok Poulet Gingembre">
+            <div class="slide-img" style="background:linear-gradient(135deg,#2a1505,#4a2a08,#3a1a05)"><span class="slide-emoji" aria-hidden="true">🔥</span></div>
+            <div class="slide-overlay"><span class="slide-name">Wok Poulet Gingembre</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Wok Porc Sucré-Salé" data-img="" data-emoji="🍱" tabindex="0" aria-label="Voir : Wok Porc Sucré-Salé">
+            <div class="slide-img" style="background:linear-gradient(135deg,#2a1a05,#4a3010,#3a2208)"><span class="slide-emoji" aria-hidden="true">🍱</span></div>
+            <div class="slide-overlay"><span class="slide-name">Wok Porc Sucré-Salé</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Bœuf Mongolien" data-img="" data-emoji="🥩" tabindex="0" aria-label="Voir : Bœuf Mongolien">
+            <div class="slide-img" style="background:linear-gradient(135deg,#1a0508,#3a1015,#2a0808)"><span class="slide-emoji" aria-hidden="true">🥩</span></div>
+            <div class="slide-overlay"><span class="slide-name">Bœuf Mongolien</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Calmars au Wok" data-img="" data-emoji="🦑" tabindex="0" aria-label="Voir : Calmars au Wok">
+            <div class="slide-img" style="background:linear-gradient(135deg,#0a0a2a,#1a1a4a,#101035)"><span class="slide-emoji" aria-hidden="true">🦑</span></div>
+            <div class="slide-overlay"><span class="slide-name">Calmars au Wok</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sushis & Makis -->
+    <div class="gallery-carousel" id="carousel-sushis" role="tabpanel" aria-label="Galerie Sushis et Makis" hidden>
+      <button class="gallery-nav-btn gallery-nav-prev" aria-label="Plats précédents">&#8249;</button>
+      <button class="gallery-nav-btn gallery-nav-next" aria-label="Plats suivants">&#8250;</button>
+      <div class="carousel-track-wrap">
+        <div class="carousel-track">
+          <div class="carousel-slide" data-name="Sashimi Saumon" data-img="" data-emoji="🍣" tabindex="0" aria-label="Voir : Sashimi Saumon">
+            <div class="slide-img" style="background:linear-gradient(135deg,#2a0810,#5a1828,#3a0c18)"><span class="slide-emoji" aria-hidden="true">🍣</span></div>
+            <div class="slide-overlay"><span class="slide-name">Sashimi Saumon</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Nigiri Saumon" data-img="" data-emoji="🍱" tabindex="0" aria-label="Voir : Nigiri Saumon">
+            <div class="slide-img" style="background:linear-gradient(135deg,#1a0a0a,#3a1a1a,#2a0f0f)"><span class="slide-emoji" aria-hidden="true">🍱</span></div>
+            <div class="slide-overlay"><span class="slide-name">Nigiri Saumon</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="California Saumon" data-img="" data-emoji="🌀" tabindex="0" aria-label="Voir : California Saumon">
+            <div class="slide-img" style="background:linear-gradient(135deg,#0a1a2a,#1a3a4a,#0a2535)"><span class="slide-emoji" aria-hidden="true">🌀</span></div>
+            <div class="slide-overlay"><span class="slide-name">California Saumon</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Maki Thon" data-img="" data-emoji="⬛" tabindex="0" aria-label="Voir : Maki Thon">
+            <div class="slide-img" style="background:linear-gradient(135deg,#1a0a10,#3a1525,#250a18)"><span class="slide-emoji" aria-hidden="true">🫱</span></div>
+            <div class="slide-overlay"><span class="slide-name">Maki Thon</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Spicy Tuna Roll" data-img="" data-emoji="🌶️" tabindex="0" aria-label="Voir : Spicy Tuna Roll">
+            <div class="slide-img" style="background:linear-gradient(135deg,#2a0505,#5a1010,#380808)"><span class="slide-emoji" aria-hidden="true">🌶️</span></div>
+            <div class="slide-overlay"><span class="slide-name">Spicy Tuna Roll</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Temaki Saumon" data-img="" data-emoji="🫙" tabindex="0" aria-label="Voir : Temaki Saumon">
+            <div class="slide-img" style="background:linear-gradient(135deg,#1a1a0a,#3a3515,#282510)"><span class="slide-emoji" aria-hidden="true">🌯</span></div>
+            <div class="slide-overlay"><span class="slide-name">Temaki Saumon</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Desserts -->
+    <div class="gallery-carousel" id="carousel-desserts" role="tabpanel" aria-label="Galerie Desserts" hidden>
+      <button class="gallery-nav-btn gallery-nav-prev" aria-label="Plats précédents">&#8249;</button>
+      <button class="gallery-nav-btn gallery-nav-next" aria-label="Plats suivants">&#8250;</button>
+      <div class="carousel-track-wrap">
+        <div class="carousel-track">
+          <div class="carousel-slide" data-name="Mochi Matcha" data-img="" data-emoji="🍡" tabindex="0" aria-label="Voir : Mochi Matcha">
+            <div class="slide-img" style="background:linear-gradient(135deg,#0a1a0a,#1a3a1a,#0f280f)"><span class="slide-emoji" aria-hidden="true">🍡</span></div>
+            <div class="slide-overlay"><span class="slide-name">Mochi Matcha</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Beignets Banane" data-img="" data-emoji="🍌" tabindex="0" aria-label="Voir : Beignets Banane">
+            <div class="slide-img" style="background:linear-gradient(135deg,#1a1500,#3a2e05,#282205)"><span class="slide-emoji" aria-hidden="true">🍌</span></div>
+            <div class="slide-overlay"><span class="slide-name">Beignets Banane</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Crème Matcha" data-img="" data-emoji="🍮" tabindex="0" aria-label="Voir : Crème Matcha">
+            <div class="slide-img" style="background:linear-gradient(135deg,#0a150a,#1a2a10,#101e08)"><span class="slide-emoji" aria-hidden="true">🍮</span></div>
+            <div class="slide-overlay"><span class="slide-name">Crème Matcha</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Perles du Japon" data-img="" data-emoji="🫧" tabindex="0" aria-label="Voir : Perles du Japon">
+            <div class="slide-img" style="background:linear-gradient(135deg,#0a0a1a,#1a1a3a,#101028)"><span class="slide-emoji" aria-hidden="true">🫧</span></div>
+            <div class="slide-overlay"><span class="slide-name">Perles du Japon</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Glaces Artisanales" data-img="" data-emoji="🍦" tabindex="0" aria-label="Voir : Glaces Artisanales">
+            <div class="slide-img" style="background:linear-gradient(135deg,#1a0a1a,#3a1a3a,#280a28)"><span class="slide-emoji" aria-hidden="true">🍦</span></div>
+            <div class="slide-overlay"><span class="slide-name">Glaces Artisanales</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+          <div class="carousel-slide" data-name="Fondant Chocolat" data-img="" data-emoji="🍫" tabindex="0" aria-label="Voir : Fondant Chocolat">
+            <div class="slide-img" style="background:linear-gradient(135deg,#0a0505,#1a0f0a,#120808)"><span class="slide-emoji" aria-hidden="true">🍫</span></div>
+            <div class="slide-overlay"><span class="slide-name">Fondant Chocolat</span><span class="slide-hint">Cliquer pour agrandir</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════════════════════
+       8. AVIS CLIENTS
+  ══════════════════════════════════════════════════ -->
+  <section id="reviews" aria-labelledby="reviews-title">
+    <div class="section-container">
+      <div class="section-header reveal-up">
+        <span class="section-tag">Avis Clients</span>
+        <h2 id="reviews-title" class="section-title">Ce que Disent nos Clients</h2>
+        <div class="section-divider" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <div class="reviews-slider-wrapper">
+      <button class="reviews-arrow reviews-prev" aria-label="Avis précédent">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+
+      <div class="reviews-track-wrapper" aria-label="Carrousel d'avis clients">
+        <div class="reviews-track" id="reviews-track">
+          <article class="review-card">
+            <div class="review-quote" aria-hidden="true">"</div>
+            <div class="review-stars" aria-label="5 étoiles sur 5">★★★★★</div>
+            <p class="review-text">Un repas d'exception ! Les sushis étaient absolument frais et le service impeccable. Je reviens dans la semaine sans aucun doute.</p>
+            <footer class="review-author">Sophie M.</footer>
+          </article>
+          <article class="review-card">
+            <div class="review-quote" aria-hidden="true">"</div>
+            <div class="review-stars" aria-label="5 étoiles sur 5">★★★★★</div>
+            <p class="review-text">Le buffet du samedi soir était fantastique. La variété est incroyable et tout est préparé avec soin. Ambiance feutrée et élégante.</p>
+            <footer class="review-author">Thomas L.</footer>
+          </article>
+          <article class="review-card">
+            <div class="review-quote" aria-hidden="true">"</div>
+            <div class="review-stars" aria-label="4 étoiles sur 5">★★★★☆</div>
+            <p class="review-text">Très bonne adresse à Vélizy. Le canard laqué est un must. L'équipe est chaleureuse et le cadre très soigné. Seul bémol : l'attente.</p>
+            <footer class="review-author">Amira B.</footer>
+          </article>
+          <article class="review-card">
+            <div class="review-quote" aria-hidden="true">"</div>
+            <div class="review-stars" aria-label="5 étoiles sur 5">★★★★★</div>
+            <p class="review-text">Nous avons privatisé la salle pour l'anniversaire de notre fils. Organisation parfaite, cuisine délicieuse. Toute la famille était enchantée !</p>
+            <footer class="review-author">Famille Renard</footer>
+          </article>
+          <article class="review-card">
+            <div class="review-quote" aria-hidden="true">"</div>
+            <div class="review-stars" aria-label="5 étoiles sur 5">★★★★★</div>
+            <p class="review-text">La meilleure table asiatique de la région. Les woks sont préparés devant vous et les ingrédients sont d'une fraîcheur irréprochable. Magnifique.</p>
+            <footer class="review-author">Jean-Pierre V.</footer>
+          </article>
+        </div>
+      </div>
+
+      <button class="reviews-arrow reviews-next" aria-label="Avis suivant">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </button>
+    </div>
+
+    <div class="reviews-dots" id="reviews-dots" aria-label="Navigation avis" role="tablist"></div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════
+       9. LAISSER UN AVIS
+  ══════════════════════════════════════════════════ -->
+  <section id="laisser-avis" aria-labelledby="avis-form-title">
+    <div class="section-container">
+      <div class="section-header reveal-up">
+        <span class="section-tag">Votre Expérience</span>
+        <h2 id="avis-form-title" class="section-title">Partagez Votre Avis</h2>
+        <p class="section-subtitle">Votre retour nous aide à nous améliorer et guide les futurs clients</p>
+        <div class="section-divider" aria-hidden="true"></div>
+      </div>
+
+      <div class="avis-form-wrap reveal-up delay-1">
+        <form id="avis-form" class="avis-form" novalidate>
+          <div class="avis-form-row">
+            <div class="avis-form-group">
+              <label for="avis-prenom" class="avis-label">Prénom <span aria-hidden="true">*</span></label>
+              <input type="text" id="avis-prenom" name="prenom" class="avis-input" placeholder="Votre prénom" required maxlength="50" />
+            </div>
+            <div class="avis-form-group">
+              <label class="avis-label">Note <span aria-hidden="true">*</span></label>
+              <div class="avis-stars-input" role="group" aria-label="Choisissez une note de 1 à 5 étoiles">
+                <input type="radio" id="star5" name="note" value="5" class="star-radio" /><label for="star5" class="star-label" aria-label="5 étoiles">★</label>
+                <input type="radio" id="star4" name="note" value="4" class="star-radio" /><label for="star4" class="star-label" aria-label="4 étoiles">★</label>
+                <input type="radio" id="star3" name="note" value="3" class="star-radio" /><label for="star3" class="star-label" aria-label="3 étoiles">★</label>
+                <input type="radio" id="star2" name="note" value="2" class="star-radio" /><label for="star2" class="star-label" aria-label="2 étoiles">★</label>
+                <input type="radio" id="star1" name="note" value="1" class="star-radio" /><label for="star1" class="star-label" aria-label="1 étoile">★</label>
+              </div>
+            </div>
+          </div>
+          <div class="avis-form-group">
+            <label for="avis-texte" class="avis-label">Votre avis <span aria-hidden="true">*</span></label>
+            <textarea id="avis-texte" name="texte" class="avis-textarea" placeholder="Partagez votre expérience chez Royal Vélizy..." required maxlength="400" rows="4"></textarea>
+            <span class="avis-char-count"><span id="avis-char-nb">0</span> / 400</span>
+          </div>
+          <button type="submit" class="btn btn-primary avis-submit-btn" id="avis-submit">
+            <span class="avis-submit-text">Publier mon avis</span>
+            <span class="avis-submit-loader" aria-hidden="true" hidden>⏳</span>
+          </button>
+          <p class="avis-msg" id="avis-msg" aria-live="polite" hidden></p>
+        </form>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════
+       10. FOOTER / CONTACT
+  ══════════════════════════════════════════════════ -->
+  <footer id="contact" aria-label="Pied de page – Informations de contact">
+    <div class="footer-container">
+      <div class="footer-grid">
+
+        <!-- Brand Column -->
+        <div class="footer-col footer-brand">
+          <a href="#hero" class="footer-logo" aria-label="Royal Vélizy – Accueil">
+            <span class="logo-royal">ROYAL</span>
+            <span class="logo-velizy">VÉLIZY</span>
+          </a>
+          <p class="footer-desc">Restaurant asiatique haut de gamme à Vélizy-Villacoublay. Cuisine chinoise et japonaise, buffet à volonté depuis 2009.</p>
+          <div class="social-icons">
+            <a href="#" class="social-icon" aria-label="Suivez-nous sur Facebook" rel="noopener">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            </a>
+            <a href="#" class="social-icon" aria-label="Suivez-nous sur Instagram" rel="noopener">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+            </a>
+            <a href="#" class="social-icon" aria-label="Retrouvez-nous sur Google" rel="noopener">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- Info Column -->
+        <div class="footer-col">
+          <h3 class="footer-col-title">Informations</h3>
+          <ul class="footer-info-list" role="list">
+            <li class="footer-info-item">
+              <svg class="info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+              <address class="footer-info-text" style="font-style:normal;">11 rue Paul Dautier<br />78140 Vélizy-Villacoublay</address>
+            </li>
+            <li class="footer-info-item">
+              <svg class="info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.64 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.55 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 5.61 5.61l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+              <a href="tel:+33139460000" class="footer-info-text footer-link">01 39 46 XX XX</a>
+            </li>
+            <li class="footer-info-item">
+              <svg class="info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+              <a href="mailto:contact@restaurant-royal-velizy.fr" class="footer-info-text footer-link">contact@restaurant-royal-velizy.fr</a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Horaires Column -->
+        <div class="footer-col">
+          <h3 class="footer-col-title">Horaires</h3>
+          <div class="footer-horaires">
+            <div class="footer-horaire-row">
+              <span>Lun – Ven</span>
+              <span>11h30 – 22h30</span>
+            </div>
+            <div class="footer-horaire-row">
+              <span>Samedi</span>
+              <span>11h30 – 23h00</span>
+            </div>
+            <div class="footer-horaire-row">
+              <span>Dimanche</span>
+              <span>11h30 – 22h30</span>
+            </div>
+            <div class="footer-horaire-row open-badge-row">
+              <span class="open-badge">Ouvert 7j/7</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Map Column -->
+        <div class="footer-col">
+          <h3 class="footer-col-title">Nous Trouver</h3>
+          <div class="footer-map-placeholder" aria-label="Plan d'accès – Royal Vélizy, 11 rue Paul Dautier, Vélizy-Villacoublay">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            <p>11 rue Paul Dautier<br />78140 Vélizy-Villacoublay</p>
+          </div>
+          <a href="https://www.google.com/maps/search/11+rue+Paul+Dautier+78140+V%C3%A9lizy-Villacoublay" class="btn btn-primary btn-sm" target="_blank" rel="noopener noreferrer" aria-label="Obtenir l'itinéraire vers Royal Vélizy sur Google Maps">
+            Itinéraire
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p class="footer-copyright">&copy; 2024 Royal Vélizy. Tous droits réservés.</p>
+      <p class="footer-credit">Conçu avec <span aria-label="amour">❤️</span> pour vous régaler</p>
+    </div>
+  </footer>
+
+  <!-- Gallery Lightbox Modal -->
+  <div class="gallery-modal" id="gallery-modal" role="dialog" aria-modal="true" aria-label="Visualisation du plat" hidden>
+    <div class="gallery-modal-backdrop"></div>
+    <div class="gallery-modal-content">
+      <button class="gallery-modal-close" aria-label="Fermer la galerie">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      <div class="gallery-modal-img-wrap">
+        <div class="gallery-modal-placeholder" id="gallery-modal-placeholder">
+          <span class="modal-emoji" id="gallery-modal-emoji" aria-hidden="true"></span>
+          <p class="modal-img-coming">Photo à venir</p>
+        </div>
+        <img class="gallery-modal-img" id="gallery-modal-img" src="" alt="" style="display:none;" />
+      </div>
+      <div class="gallery-modal-footer">
+        <h3 class="gallery-modal-name" id="gallery-modal-name"></h3>
+        <div class="gallery-modal-nav">
+          <button class="gallery-modal-prev" aria-label="Plat précédent">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <span class="gallery-modal-counter" id="gallery-modal-counter">1 / 6</span>
+          <button class="gallery-modal-next" aria-label="Plat suivant">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
