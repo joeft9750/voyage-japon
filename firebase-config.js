@@ -17,12 +17,13 @@
 // ============================================================
 
 export const firebaseConfig = {
-  apiKey: "VOTRE_API_KEY",
-  authDomain: "VOTRE_PROJECT.firebaseapp.com",
-  projectId: "VOTRE_PROJECT_ID",
-  storageBucket: "VOTRE_PROJECT.firebasestorage.app",
-  messagingSenderId: "VOTRE_SENDER_ID",
-  appId: "VOTRE_APP_ID"
+  apiKey: "AIzaSyAUrnhg63A5wW-TDhswHyILsz16QyBdVlc",
+  authDomain: "voyage-japon-5e9ea.firebaseapp.com",
+  projectId: "voyage-japon-5e9ea",
+  storageBucket: "voyage-japon-5e9ea.firebasestorage.app",
+  messagingSenderId: "818493844452",
+  appId: "1:818493844452:web:669e652709dbeb6d65f5f1"
 };
 
-export const IS_CONFIGURED = firebaseConfig.apiKey !== "VOTRE_API_KEY";
+export const IS_CONFIGURED = true;
+
