@@ -471,10 +471,11 @@ button { border: none; background: none; cursor: pointer; font-family: inherit; 
 }
 
 .activity-item {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 10px 34px 10px 12px;
   background: rgba(255,255,255,0.7);
   border-radius: 8px;
   border: 1px solid var(--cream-dark);
@@ -928,3 +929,204 @@ button { border: none; background: none; cursor: pointer; font-family: inherit; 
   .header-title .title-jp { font-size: 1.05rem; }
   .header-title .title-fr { font-size: 0.65rem; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ADD / DELETE ACTIVITIES  (feature: live add & delete, synced)
+   ═══════════════════════════════════════════════════════════════ */
+
+.no-activity {
+  color: var(--ink-light);
+  font-style: italic;
+  margin-top: 16px;
+  font-size: 0.9rem;
+}
+
+/* Custom-added badge */
+.act-custom-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--gold);
+  padding: 2px 8px;
+  border-radius: 10px;
+  letter-spacing: 0.3px;
+}
+
+/* Delete (trash) button on each activity */
+.act-delete-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #b08;
+  color: #C0392B;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s, transform 0.1s;
+}
+.activity-item:hover .act-delete-btn,
+.activity-item:focus-within .act-delete-btn {
+  opacity: 0.55;
+}
+.act-delete-btn:hover {
+  opacity: 1 !important;
+  background: rgba(192,57,43,0.12);
+  transform: scale(1.1);
+}
+/* On touch devices the trash is always visible */
+@media (hover: none) {
+  .act-delete-btn { opacity: 0.5; }
+}
+
+/* "+ Add activity" button */
+.add-activity-btn {
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  border: 2px dashed var(--red);
+  color: var(--red);
+  border-radius: 10px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.add-activity-btn:hover {
+  background: var(--red);
+  color: #fff;
+}
+.add-activity-btn .add-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+/* ── Add-activity modal ── */
+.add-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.add-modal[hidden] { display: none; }
+.add-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.add-modal.show .add-modal-backdrop { opacity: 1; }
+.add-modal-box {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  background: var(--paper);
+  border-radius: 16px;
+  padding: 28px 24px 24px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  transform: translateY(20px) scale(0.97);
+  opacity: 0;
+  transition: transform 0.22s ease-out, opacity 0.22s ease-out;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.add-modal.show .add-modal-box {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+.add-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: var(--ink-light);
+  cursor: pointer;
+  line-height: 1;
+}
+.add-modal-close:hover { color: var(--red); }
+.add-modal-title {
+  font-family: 'Caveat', cursive;
+  font-size: 1.8rem;
+  color: var(--red-dark);
+  margin: 0 0 16px;
+  text-align: center;
+}
+.add-form { display: flex; flex-direction: column; gap: 12px; }
+.add-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-light);
+}
+.add-row { display: flex; gap: 12px; }
+.add-row .add-label { flex: 1; }
+.add-input {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  padding: 9px 11px;
+  border: 1px solid var(--cream-dark);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  width: 100%;
+}
+.add-input:focus {
+  outline: none;
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(198,40,40,0.12);
+}
+.add-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+.add-checkbox-row input { width: 18px; height: 18px; accent-color: var(--red); }
+.add-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+}
+.add-cancel, .add-submit {
+  flex: 1;
+  padding: 11px;
+  border-radius: 10px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s, opacity 0.2s;
+}
+.add-cancel {
+  background: var(--cream-dark);
+  color: var(--ink-light);
+}
+.add-cancel:hover { opacity: 0.8; }
+.add-submit {
+  background: var(--red);
+  color: #fff;
+}
+.add-submit:hover { background: var(--red-dark); }

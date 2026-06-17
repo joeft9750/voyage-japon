@@ -360,19 +360,36 @@ const ALL_DAYS = [
   ...TRIP.tokyo2.days,
 ];
 
-// Build activity ID → day lookup
-const ACTIVITY_DAY_MAP = {};
+// ── Build the SEED list of activities (full records) from the static TRIP ──────
+// Each activity is now a self-contained record carrying its dayId so it can be
+// created / deleted dynamically and synced for everyone via Firestore.
+const SEED_ACTIVITIES = [];
 ALL_DAYS.forEach(day => {
-  day.activities.forEach(act => {
-    ACTIVITY_DAY_MAP[act.id] = day.id;
+  day.activities.forEach((act, i) => {
+    SEED_ACTIVITIES.push({
+      id: act.id,
+      dayId: day.id,
+      name: act.name,
+      priceEur: act.priceEur || 0,
+      priceJpy: act.priceJpy || 0,
+      category: act.category || 'visite',
+      isPaid: act.isPaid === true,
+      note: act.note || '',
+      checked: false,
+      custom: false,
+      order: i,
+    });
   });
 });
+
+// Valid categories for the "add" form
+const CATEGORIES = ['transport', 'attraction', 'repas', 'shopping', 'visite', 'hébergement', 'activité', 'parc', 'photo', 'off'];
 
 // ── App State ─────────────────────────────────────────────────────────────────
 const state = {
   currentCity: 'tokyo1',
   currentDayIndex: 0,    // index within TRIP[currentCity].days
-  activities: {},        // activityId → { checked: bool }
+  activities: {},        // activityId → full activity record (single source of truth)
   isOnline: false,
   isTipsPage: false,
 };
@@ -400,21 +417,60 @@ function isActivityChecked(actId) {
   return state.activities[actId]?.checked === true;
 }
 
+// Return the activities for a given day, sorted by order then creation time
+function getDayActivities(dayId) {
+  return Object.values(state.activities)
+    .filter(a => a && a.dayId === dayId)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || (a.createdAt ?? 0) - (b.createdAt ?? 0));
+}
+
+// Build the default state.activities map from the seed (used offline / first run)
+function buildSeedState() {
+  const map = {};
+  SEED_ACTIVITIES.forEach(act => { map[act.id] = { ...act }; });
+  return map;
+}
+
+// Strip undefined and keep only persistable fields for Firestore
+function toRecord(act) {
+  return {
+    dayId: act.dayId,
+    name: act.name,
+    priceEur: act.priceEur || 0,
+    priceJpy: act.priceJpy || 0,
+    category: act.category || 'visite',
+    isPaid: act.isPaid === true,
+    note: act.note || '',
+    checked: act.checked === true,
+    custom: act.custom === true,
+    order: act.order ?? 0,
+    createdAt: act.createdAt ?? 0,
+  };
+}
+
 // ── LocalStorage Persistence ──────────────────────────────────────────────────
+// Stores the FULL activities map so that added / deleted activities persist
+// locally when Firebase is not configured.
 function loadFromLocalStorage() {
   try {
-    const raw = localStorage.getItem('japon2026_activities');
+    const raw = localStorage.getItem('japon2026_activities_v2');
     if (raw) {
-      state.activities = JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+        state.activities = parsed;
+        return;
+      }
     }
   } catch (e) {
     console.warn('LocalStorage read error:', e);
   }
+  // No saved data → start from the seed
+  state.activities = buildSeedState();
 }
 
 function saveToLocalStorage() {
   try {
-    localStorage.setItem('japon2026_activities', JSON.stringify(state.activities));
+    localStorage.setItem('japon2026_activities_v2', JSON.stringify(state.activities));
   } catch (e) {
     console.warn('LocalStorage write error:', e);
   }
@@ -476,16 +532,15 @@ function renderBudget() {
   let budDone = 0;
   let budTotal = 0;
 
-  ALL_DAYS.forEach(day => {
-    day.activities.forEach(act => {
-      const price = act.priceEur || 0;
-      budTotal += price;
-      if (act.isPaid) {
-        budPaid += price;
-      } else if (isActivityChecked(act.id)) {
-        budDone += price;
-      }
-    });
+  Object.values(state.activities).forEach(act => {
+    if (!act) return;
+    const price = act.priceEur || 0;
+    budTotal += price;
+    if (act.isPaid) {
+      budPaid += price;
+    } else if (act.checked === true) {
+      budDone += price;
+    }
   });
 
   const fmt = (n) => n > 0 ? n + ' €' : '0 €';
@@ -497,35 +552,87 @@ function renderBudget() {
   if (elTotal) elTotal.textContent = fmt(budTotal);
 }
 
-// ── Activity Toggle ───────────────────────────────────────────────────────────
+// ── Activity Toggle (check / uncheck) ───────────────────────────────────────────
 async function toggleActivity(actId, currentValue) {
+  const act = state.activities[actId];
+  if (!act) return;
   const newValue = !currentValue;
 
   // Optimistic UI update
-  state.activities[actId] = { checked: newValue };
+  act.checked = newValue;
 
-  // Update the specific checkbox in the DOM without full re-render
   const checkbox = document.querySelector(`[data-act-id="${actId}"]`);
   const item = document.querySelector(`[data-activity-item="${actId}"]`);
-  if (checkbox) {
-    checkbox.classList.toggle('checked', newValue);
-  }
-  if (item) {
-    item.classList.toggle('done', newValue);
-    const nameEl = item.querySelector('.act-name');
-    if (nameEl) {
-      nameEl.style.textDecoration = newValue ? 'line-through' : '';
-    }
-  }
+  if (checkbox) checkbox.classList.toggle('checked', newValue);
+  if (item) item.classList.toggle('done', newValue);
 
   renderBudget();
+  renderProgressOnly();
   showToast(newValue ? '✓ Marqué comme fait !' : '↩ Marqué comme à faire');
 
-  // Persist
+  await persistActivity(actId, act);
+}
+
+// ── Add an activity ─────────────────────────────────────────────────────────────
+async function addActivity(dayId, data) {
+  const id = 'c_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+  const siblings = getDayActivities(dayId);
+  const maxOrder = siblings.reduce((m, a) => Math.max(m, a.order ?? 0), 0);
+
+  const record = {
+    id,
+    dayId,
+    name: data.name,
+    priceEur: Number(data.priceEur) || 0,
+    priceJpy: Number(data.priceJpy) || 0,
+    category: data.category || 'visite',
+    isPaid: data.isPaid === true,
+    note: data.note || '',
+    checked: false,
+    custom: true,
+    order: maxOrder + 1,
+    createdAt: Date.now(),
+  };
+
+  state.activities[id] = record;
+  renderBook();
+  renderBudget();
+  showToast('➕ Activité ajoutée !');
+
+  await persistActivity(id, record);
+}
+
+// ── Delete an activity ──────────────────────────────────────────────────────────
+async function deleteActivity(actId) {
+  const act = state.activities[actId];
+  if (!act) return;
+  if (!confirm(`Supprimer « ${act.name} » ?\nCette suppression sera visible par tout le groupe.`)) return;
+
+  delete state.activities[actId];
+  renderBook();
+  renderBudget();
+  showToast('🗑️ Activité supprimée');
+
+  // Persist deletion
+  if (db) {
+    try {
+      const { doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      await deleteDoc(doc(db, 'activities', actId));
+    } catch (e) {
+      console.error('Firestore delete error:', e);
+      saveToLocalStorage();
+    }
+  } else {
+    saveToLocalStorage();
+  }
+}
+
+// ── Persist a single activity (Firestore or localStorage) ───────────────────────
+async function persistActivity(actId, act) {
   if (db) {
     try {
       const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-      await setDoc(doc(db, 'activities', actId), { checked: newValue });
+      await setDoc(doc(db, 'activities', actId), toRecord(act));
     } catch (e) {
       console.error('Firestore write error:', e);
       saveToLocalStorage();
@@ -535,14 +642,22 @@ async function toggleActivity(actId, currentValue) {
   }
 }
 
+// Update just the progress bar on the left page (after a check toggle)
+function renderProgressOnly() {
+  if (state.isTipsPage) return;
+  const day = getCurrentDay();
+  if (day) renderLeftPage(day);
+}
+
 // ── Left Page Render ──────────────────────────────────────────────────────────
 function renderLeftPage(day) {
   const city = TRIP[day.city];
   const typeConfig = DAY_TYPE_CONFIG[day.type] || DAY_TYPE_CONFIG.normal;
 
-  // Progress: checked activities vs total
-  const totalActs = day.activities.length;
-  const doneActs  = day.activities.filter(a => isActivityChecked(a.id)).length;
+  // Progress: checked activities vs total (uses the dynamic, synced list)
+  const dayActs  = getDayActivities(day.id);
+  const totalActs = dayActs.length;
+  const doneActs  = dayActs.filter(a => a.checked === true).length;
   const pct = totalActs > 0 ? Math.round((doneActs / totalActs) * 100) : 0;
 
   // Trip day number
@@ -584,22 +699,30 @@ function renderLeftPage(day) {
 }
 
 // ── Right Page Render ─────────────────────────────────────────────────────────
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 function renderRightPage(day) {
+  const acts = getDayActivities(day.id);
   let html = `<div class="activities-header">Programme du jour</div>`;
 
-  if (day.activities.length === 0) {
-    html += `<p style="color:var(--ink-light);font-style:italic;margin-top:20px;">Aucune activité planifiée.</p>`;
+  if (acts.length === 0) {
+    html += `<p class="no-activity">Aucune activité planifiée. Ajoutez-en une ci-dessous !</p>`;
   } else {
     html += `<ul class="activity-list">`;
-    day.activities.forEach(act => {
-      const checked = isActivityChecked(act.id);
+    acts.forEach(act => {
+      const checked = act.checked === true;
       const priceStr = act.priceEur > 0
         ? `<span class="act-price">${act.priceEur} €${act.priceJpy > 0 ? ' / ' + act.priceJpy.toLocaleString() + ' ¥' : ''}</span>`
         : '';
       const catEmoji = CAT_EMOJI[act.category] || '📌';
-      const catStr = `<span class="act-cat">${catEmoji} ${act.category}</span>`;
+      const catStr = `<span class="act-cat">${catEmoji} ${escapeHtml(act.category)}</span>`;
       const paidStr = act.isPaid ? `<span class="act-paid-badge">✓ PAYÉ</span>` : '';
-      const noteStr = act.note ? `<div class="act-note">${act.note}</div>` : '';
+      const customStr = act.custom ? `<span class="act-custom-badge">ajouté</span>` : '';
+      const noteStr = act.note ? `<div class="act-note">${escapeHtml(act.note)}</div>` : '';
 
       html += `
         <li class="activity-item${checked ? ' done' : ''}" data-activity-item="${act.id}">
@@ -608,39 +731,63 @@ function renderRightPage(day) {
                role="checkbox"
                aria-checked="${checked}"
                tabindex="0"
-               aria-label="Marquer : ${act.name}"></div>
+               aria-label="Marquer : ${escapeHtml(act.name)}"></div>
           <div class="act-body">
-            <div class="act-name">${act.name}</div>
+            <div class="act-name">${escapeHtml(act.name)}</div>
             <div class="act-meta">
               ${priceStr}
               ${catStr}
               ${paidStr}
+              ${customStr}
             </div>
             ${noteStr}
           </div>
+          <button class="act-delete-btn" data-del-id="${act.id}" title="Supprimer" aria-label="Supprimer : ${escapeHtml(act.name)}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          </button>
         </li>
       `;
     });
     html += `</ul>`;
   }
 
+  // "Add activity" button
+  html += `
+    <button class="add-activity-btn" data-add-day="${day.id}">
+      <span class="add-icon">＋</span> Ajouter une activité
+    </button>
+  `;
+
   const el = document.getElementById('rightContent');
   if (el) el.innerHTML = html;
 
-  // Attach event listeners to checkboxes
-  const checkboxes = document.querySelectorAll('.act-checkbox[data-act-id]');
-  checkboxes.forEach(cb => {
+  // Checkbox listeners
+  document.querySelectorAll('.act-checkbox[data-act-id]').forEach(cb => {
     const actId = cb.dataset.actId;
     const handler = (e) => {
       e.preventDefault();
-      const currentChecked = cb.classList.contains('checked');
-      toggleActivity(actId, currentChecked);
+      toggleActivity(actId, cb.classList.contains('checked'));
     };
     cb.addEventListener('click', handler);
     cb.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') handler(e);
     });
   });
+
+  // Delete listeners
+  document.querySelectorAll('.act-delete-btn[data-del-id]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      deleteActivity(btn.dataset.delId);
+    });
+  });
+
+  // Add-activity listener
+  const addBtn = document.querySelector('.add-activity-btn[data-add-day]');
+  if (addBtn) {
+    addBtn.addEventListener('click', () => openAddModal(addBtn.dataset.addDay));
+  }
 }
 
 // ── Tips Page Render ──────────────────────────────────────────────────────────
@@ -879,6 +1026,100 @@ function setCity(cityId) {
   }
 }
 
+// ── Add-Activity Modal ──────────────────────────────────────────────────────────
+function injectModal() {
+  if (document.getElementById('addModal')) return;
+  const catOptions = CATEGORIES
+    .map(c => `<option value="${c}">${CAT_EMOJI[c] || '📌'} ${c}</option>`)
+    .join('');
+
+  const modal = document.createElement('div');
+  modal.className = 'add-modal';
+  modal.id = 'addModal';
+  modal.hidden = true;
+  modal.innerHTML = `
+    <div class="add-modal-backdrop" data-close-modal></div>
+    <div class="add-modal-box" role="dialog" aria-modal="true" aria-label="Ajouter une activité">
+      <button class="add-modal-close" data-close-modal aria-label="Fermer">✕</button>
+      <h3 class="add-modal-title">➕ Nouvelle activité</h3>
+      <form id="addForm" class="add-form" novalidate>
+        <input type="hidden" id="addDayId" />
+        <label class="add-label">Nom de l'activité *
+          <input type="text" id="addName" class="add-input" required maxlength="80" placeholder="Ex : Musée Ghibli" />
+        </label>
+        <div class="add-row">
+          <label class="add-label">Prix (€)
+            <input type="number" id="addPriceEur" class="add-input" min="0" step="0.5" placeholder="0" />
+          </label>
+          <label class="add-label">Prix (¥)
+            <input type="number" id="addPriceJpy" class="add-input" min="0" step="100" placeholder="0" />
+          </label>
+        </div>
+        <label class="add-label">Catégorie
+          <select id="addCategory" class="add-input">${catOptions}</select>
+        </label>
+        <label class="add-label">Note (optionnel)
+          <input type="text" id="addNote" class="add-input" maxlength="120" placeholder="Horaire, adresse, détail…" />
+        </label>
+        <label class="add-checkbox-row">
+          <input type="checkbox" id="addPaid" /> Déjà payé / réservé
+        </label>
+        <div class="add-actions">
+          <button type="button" class="add-cancel" data-close-modal>Annuler</button>
+          <button type="submit" class="add-submit">Ajouter</button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  // Close handlers
+  modal.querySelectorAll('[data-close-modal]').forEach(el => {
+    el.addEventListener('click', closeAddModal);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.hidden) closeAddModal();
+  });
+
+  // Submit handler
+  const form = modal.querySelector('#addForm');
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const dayId = document.getElementById('addDayId').value;
+    const name = document.getElementById('addName').value.trim();
+    if (!name) {
+      document.getElementById('addName').focus();
+      return;
+    }
+    addActivity(dayId, {
+      name,
+      priceEur: document.getElementById('addPriceEur').value,
+      priceJpy: document.getElementById('addPriceJpy').value,
+      category: document.getElementById('addCategory').value,
+      note: document.getElementById('addNote').value.trim(),
+      isPaid: document.getElementById('addPaid').checked,
+    });
+    closeAddModal();
+  });
+}
+
+function openAddModal(dayId) {
+  const modal = document.getElementById('addModal');
+  if (!modal) return;
+  document.getElementById('addForm').reset();
+  document.getElementById('addDayId').value = dayId;
+  modal.hidden = false;
+  requestAnimationFrame(() => modal.classList.add('show'));
+  setTimeout(() => document.getElementById('addName')?.focus(), 50);
+}
+
+function closeAddModal() {
+  const modal = document.getElementById('addModal');
+  if (!modal) return;
+  modal.classList.remove('show');
+  setTimeout(() => { modal.hidden = true; }, 200);
+}
+
 // ── Firebase Setup ────────────────────────────────────────────────────────────
 async function setupFirebase(config) {
   updateSyncStatus('connecting');
@@ -908,17 +1149,15 @@ async function setupFirebase(config) {
 async function seedDatabase(db, getDocs, collection, doc, writeBatch, setDoc) {
   try {
     const snap = await getDocs(collection(db, 'activities'));
-    if (!snap.empty) return; // Already seeded
+    if (!snap.empty) return; // Already seeded – the cloud is the source of truth
 
     const batch = writeBatch(db);
-    ALL_DAYS.forEach(day => {
-      day.activities.forEach(act => {
-        const ref = doc(db, 'activities', act.id);
-        batch.set(ref, { checked: state.activities[act.id]?.checked || false });
-      });
+    SEED_ACTIVITIES.forEach(act => {
+      const ref = doc(db, 'activities', act.id);
+      batch.set(ref, toRecord(act));
     });
     await batch.commit();
-    console.log('Database seeded with', ALL_DAYS.reduce((acc, d) => acc + d.activities.length, 0), 'activities');
+    console.log('Database seeded with', SEED_ACTIVITIES.length, 'activities');
   } catch (e) {
     console.error('Seed error:', e);
   }
@@ -930,20 +1169,23 @@ function subscribeToUpdates(db, collection, onSnapshot) {
   unsubscribe = onSnapshot(
     collection(db, 'activities'),
     (snap) => {
+      // Rebuild the whole activities map from the cloud (handles add + delete)
+      const fresh = {};
       snap.forEach(docSnap => {
-        state.activities[docSnap.id] = docSnap.data();
+        fresh[docSnap.id] = { id: docSnap.id, ...docSnap.data() };
       });
-      // Refresh current view without full re-render
+      state.activities = fresh;
+
+      // Mirror to localStorage as an offline cache
+      saveToLocalStorage();
+
+      // Full re-render so added / deleted activities appear for everyone
       renderBudget();
-      // Update all visible checkboxes
-      const checkboxes = document.querySelectorAll('.act-checkbox[data-act-id]');
-      checkboxes.forEach(cb => {
-        const actId = cb.dataset.actId;
-        const checked = isActivityChecked(actId);
-        cb.classList.toggle('checked', checked);
-        const item = cb.closest('.activity-item');
-        if (item) item.classList.toggle('done', checked);
-      });
+      if (state.isTipsPage) {
+        renderTipsPage();
+      } else {
+        renderBook();
+      }
     },
     (error) => {
       console.error('Firestore subscription error:', error);
@@ -974,6 +1216,9 @@ async function init() {
 
   // Spawn sakura
   spawnSakura();
+
+  // Inject the add-activity modal
+  injectModal();
 
   // Initial render
   renderBook();
