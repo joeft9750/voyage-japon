@@ -742,9 +742,14 @@ function renderRightPage(day) {
             </div>
             ${noteStr}
           </div>
-          <button class="act-delete-btn" data-del-id="${act.id}" title="Supprimer" aria-label="Supprimer : ${escapeHtml(act.name)}">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-          </button>
+          <div class="act-actions">
+            <button class="act-edit-btn" data-edit-id="${act.id}" title="Modifier" aria-label="Modifier : ${escapeHtml(act.name)}">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            </button>
+            <button class="act-delete-btn" data-del-id="${act.id}" title="Supprimer" aria-label="Supprimer : ${escapeHtml(act.name)}">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+          </div>
         </li>
       `;
     });
@@ -771,6 +776,15 @@ function renderRightPage(day) {
     cb.addEventListener('click', handler);
     cb.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') handler(e);
+    });
+  });
+
+  // Edit listeners
+  document.querySelectorAll('.act-edit-btn[data-edit-id]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openEditModal(btn.dataset.editId);
     });
   });
 
@@ -1026,6 +1040,52 @@ function setCity(cityId) {
   }
 }
 
+// ── Update an existing activity ─────────────────────────────────────────────────
+async function updateActivity(actId, data) {
+  const act = state.activities[actId];
+  if (!act) return;
+
+  act.name     = data.name;
+  act.priceEur = Number(data.priceEur) || 0;
+  act.priceJpy = Number(data.priceJpy) || 0;
+  act.category = data.category || act.category;
+  act.isPaid   = data.isPaid === true;
+  act.note     = data.note || '';
+
+  renderBook();
+  renderBudget();
+  showToast('✏️ Activité modifiée !');
+
+  await persistActivity(actId, act);
+}
+
+function openEditModal(actId) {
+  const act = state.activities[actId];
+  if (!act) return;
+
+  const modal = document.getElementById('addModal');
+  if (!modal) return;
+
+  // Switch to edit mode
+  document.getElementById('addForm').reset();
+  document.getElementById('addDayId').value    = act.dayId;
+  document.getElementById('addMode').value     = 'edit';
+  document.getElementById('editActId').value   = actId;
+  document.getElementById('addName').value     = act.name;
+  document.getElementById('addPriceEur').value = act.priceEur || '';
+  document.getElementById('addPriceJpy').value = act.priceJpy || '';
+  document.getElementById('addCategory').value = act.category || 'visite';
+  document.getElementById('addNote').value     = act.note || '';
+  document.getElementById('addPaid').checked   = act.isPaid === true;
+
+  modal.querySelector('.add-modal-title').textContent  = '✏️ Modifier l\'activité';
+  modal.querySelector('.add-submit').textContent        = 'Sauvegarder';
+
+  modal.hidden = false;
+  requestAnimationFrame(() => modal.classList.add('show'));
+  setTimeout(() => document.getElementById('addName')?.focus(), 50);
+}
+
 // ── Add-Activity Modal ──────────────────────────────────────────────────────────
 function injectModal() {
   if (document.getElementById('addModal')) return;
@@ -1044,6 +1104,8 @@ function injectModal() {
       <h3 class="add-modal-title">➕ Nouvelle activité</h3>
       <form id="addForm" class="add-form" novalidate>
         <input type="hidden" id="addDayId" />
+        <input type="hidden" id="addMode" value="add" />
+        <input type="hidden" id="editActId" />
         <label class="add-label">Nom de l'activité *
           <input type="text" id="addName" class="add-input" required maxlength="80" placeholder="Ex : Musée Ghibli" />
         </label>
@@ -1085,20 +1147,24 @@ function injectModal() {
   const form = modal.querySelector('#addForm');
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    const dayId = document.getElementById('addDayId').value;
     const name = document.getElementById('addName').value.trim();
-    if (!name) {
-      document.getElementById('addName').focus();
-      return;
-    }
-    addActivity(dayId, {
+    if (!name) { document.getElementById('addName').focus(); return; }
+
+    const mode   = document.getElementById('addMode').value;
+    const data   = {
       name,
       priceEur: document.getElementById('addPriceEur').value,
       priceJpy: document.getElementById('addPriceJpy').value,
       category: document.getElementById('addCategory').value,
       note: document.getElementById('addNote').value.trim(),
       isPaid: document.getElementById('addPaid').checked,
-    });
+    };
+
+    if (mode === 'edit') {
+      updateActivity(document.getElementById('editActId').value, data);
+    } else {
+      addActivity(document.getElementById('addDayId').value, data);
+    }
     closeAddModal();
   });
 }
@@ -1117,7 +1183,14 @@ function closeAddModal() {
   const modal = document.getElementById('addModal');
   if (!modal) return;
   modal.classList.remove('show');
-  setTimeout(() => { modal.hidden = true; }, 200);
+  setTimeout(() => {
+    modal.hidden = true;
+    // Reset to "add" mode so the next open is always fresh
+    const modeEl = document.getElementById('addMode');
+    if (modeEl) modeEl.value = 'add';
+    modal.querySelector('.add-modal-title').textContent = '➕ Nouvelle activité';
+    modal.querySelector('.add-submit').textContent       = 'Ajouter';
+  }, 200);
 }
 
 // ── Firebase Setup ────────────────────────────────────────────────────────────

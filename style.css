@@ -475,7 +475,7 @@ button { border: none; background: none; cursor: pointer; font-family: inherit; 
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  padding: 10px 34px 10px 12px;
+  padding: 10px 38px 10px 12px;
   background: rgba(255,255,255,0.7);
   border-radius: 8px;
   border: 1px solid var(--cream-dark);
@@ -952,40 +952,55 @@ button { border: none; background: none; cursor: pointer; font-family: inherit; 
   letter-spacing: 0.3px;
 }
 
-/* Delete (trash) button on each activity */
-.act-delete-btn {
+/* Action buttons container (edit + delete) */
+.act-actions {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 26px;
-  height: 26px;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.activity-item:hover .act-actions,
+.activity-item:focus-within .act-actions {
+  opacity: 1;
+}
+@media (hover: none) {
+  .act-actions { opacity: 1; }
+}
+
+/* Shared style for edit + delete buttons */
+.act-edit-btn,
+.act-delete-btn {
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 6px;
+  border-radius: 5px;
   background: transparent;
-  color: #b08;
-  color: #C0392B;
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.2s, background 0.2s, transform 0.1s;
+  transition: background 0.15s, transform 0.1s, color 0.15s;
 }
-.activity-item:hover .act-delete-btn,
-.activity-item:focus-within .act-delete-btn {
-  opacity: 0.55;
+.act-edit-btn {
+  color: #1565C0;
+}
+.act-edit-btn:hover {
+  background: rgba(21,101,192,0.12);
+  transform: scale(1.1);
+}
+.act-delete-btn {
+  color: #C0392B;
 }
 .act-delete-btn:hover {
-  opacity: 1 !important;
   background: rgba(192,57,43,0.12);
   transform: scale(1.1);
 }
-/* On touch devices the trash is always visible */
-@media (hover: none) {
-  .act-delete-btn { opacity: 0.5; }
-}
 
-/* "+ Add activity" button */
+/* "+  Add activity" button */
 .add-activity-btn {
   width: 100%;
   margin-top: 14px;
