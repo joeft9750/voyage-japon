@@ -1679,16 +1679,45 @@ function initTabReorder() {
 function initActivityDragDrop(container) {
   let actDragSrc = null;
 
+  function clearDragState() {
+    if (actDragSrc) actDragSrc.classList.remove('dragging');
+    container.querySelectorAll('.activity-item').forEach(i => i.classList.remove('drag-over'));
+    actDragSrc = null;
+  }
+
+  function onTouchMove(e) {
+    if (!actDragSrc) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const target = el?.closest?.('.activity-item');
+    container.querySelectorAll('.activity-item').forEach(i => i.classList.remove('drag-over'));
+    if (target && target !== actDragSrc) target.classList.add('drag-over');
+  }
+
+  function onTouchEnd(e) {
+    if (!actDragSrc) return;
+    const touch = e.changedTouches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const target = el?.closest?.('.activity-item');
+    const src = actDragSrc;
+    clearDragState();
+    document.removeEventListener('touchmove', onTouchMove);
+    document.removeEventListener('touchend', onTouchEnd);
+    document.removeEventListener('touchcancel', onTouchEnd);
+    if (target && target !== src) {
+      reorderActivities(src.dataset.activityItem, target.dataset.activityItem);
+    }
+  }
+
   container.querySelectorAll('.activity-item[draggable]').forEach(item => {
+    // ── Desktop (mouse) drag ──
     item.addEventListener('dragstart', e => {
       actDragSrc = item;
       item.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
     });
-    item.addEventListener('dragend', () => {
-      item.classList.remove('dragging');
-      container.querySelectorAll('.activity-item').forEach(i => i.classList.remove('drag-over'));
-    });
+    item.addEventListener('dragend', clearDragState);
     item.addEventListener('dragover', e => {
       e.preventDefault();
       if (actDragSrc && actDragSrc !== item) {
@@ -1705,6 +1734,19 @@ function initActivityDragDrop(container) {
         reorderActivities(actDragSrc.dataset.activityItem, item.dataset.activityItem);
       }
     });
+
+    // ── Mobile (touch) drag – initiated via drag handle ──
+    const handle = item.querySelector('.drag-handle');
+    if (handle) {
+      handle.addEventListener('touchstart', e => {
+        e.stopPropagation();
+        actDragSrc = item;
+        item.classList.add('dragging');
+        document.addEventListener('touchmove', onTouchMove, { passive: false });
+        document.addEventListener('touchend', onTouchEnd);
+        document.addEventListener('touchcancel', onTouchEnd);
+      }, { passive: true });
+    }
   });
 }
 

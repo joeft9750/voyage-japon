@@ -1674,7 +1674,7 @@ button { border: none; background: none; cursor: pointer; font-family: inherit; 
   color: var(--ink-light);
   opacity: 0;
   cursor: grab;
-  padding: 0 2px;
+  padding: 0 4px;
   font-size: 1.1rem;
   align-self: center;
   user-select: none;
@@ -1684,7 +1684,18 @@ button { border: none; background: none; cursor: pointer; font-family: inherit; 
 }
 .activity-item:hover .drag-handle,
 .activity-item:focus-within .drag-handle { opacity: 0.5; }
-@media (hover: none) { .drag-handle { opacity: 0.4; } }
+@media (hover: none) {
+  .drag-handle {
+    opacity: 0.55;
+    font-size: 1.3rem;
+    padding: 4px 6px;
+    min-width: 32px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
 
 /* ═══════════════════════════════════════════════════════════════
    DRAG & DROP – TABS
