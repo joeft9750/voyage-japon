@@ -3,15 +3,15 @@
  * app.js – ES Module, Firebase Firestore sync + localStorage fallback
  */
 
-// ── Firebase imports ──────────────────────────────────────────────────────────
+// ── Données statiques (itinéraire, phrases, voyageurs) ──────────────────────────
+import { CAT_EMOJI, DAY_TYPE_CONFIG, TRIP, ALL_DAYS, SEED_ACTIVITIES, CATEGORIES, CITY_CAL_COLORS, PEOPLE, PHRASES } from './data.js';
+
+// ── Firebase state ────────────────────────────────────────────────────────────
 let firebaseApp = null;
 let db = null;
 let unsubscribe = null;
 let unsubscribeExpenses = null;
 let unsubscribePeople = null;
-
-// ── Données statiques (itinéraire, phrases, voyageurs) ──────────────────────────
-import { CAT_EMOJI, DAY_TYPE_CONFIG, TRIP, ALL_DAYS, SEED_ACTIVITIES, CATEGORIES, CITY_CAL_COLORS, PEOPLE, PHRASES } from './data.js';
 
 
 // ── App State ─────────────────────────────────────────────────────────────────
@@ -84,6 +84,8 @@ function toRecord(act) {
     custom: act.custom === true,
     order: act.order ?? 0,
     createdAt: act.createdAt ?? 0,
+    priority: act.priority || 'medium',
+    reminder: act.reminder || null,
   };
 }
 
@@ -319,6 +321,8 @@ async function addActivity(dayId, data) {
     custom: true,
     order: maxOrder + 1,
     createdAt: Date.now(),
+    priority: data.priority || 'medium',
+    reminder: data.reminder || null,
   };
 
   state.activities[id] = record;
@@ -452,21 +456,27 @@ function renderRightPage(day) {
       const customStr = act.custom ? `<span class="act-custom-badge">ajouté</span>` : '';
       const noteStr = act.note ? `<div class="act-note">${escapeHtml(act.note)}</div>` : '';
 
+      const prioColor = { high: '#C62828', medium: '#C9A84C', low: '#4CAF50' }[act.priority || 'medium'];
+      const reminderStr = act.reminder ? `<span class="act-reminder-badge">🔔 ${escapeHtml(act.reminder)}</span>` : '';
+      const priorityDot = `<span class="act-priority-dot" style="background:${prioColor}" title="Priorité: ${act.priority || 'medium'}"></span>`;
       html += `
-        <li class="activity-item${checked ? ' done' : ''}" data-activity-item="${act.id}">
+        <li class="activity-item${checked ? ' done' : ''}" data-activity-item="${act.id}" data-priority="${act.priority || 'medium'}" draggable="true">
+          <span class="drag-handle" aria-hidden="true">⠿</span>
           <div class="act-checkbox${checked ? ' checked' : ''}"
                data-act-id="${act.id}"
                role="checkbox"
                aria-checked="${checked}"
                tabindex="0"
                aria-label="Marquer : ${escapeHtml(act.name)}"></div>
-          <div class="act-body">
+          <div class="act-body" data-detail-id="${act.id}">
             <div class="act-name">${escapeHtml(act.name)}</div>
             <div class="act-meta">
+              ${priorityDot}
               ${priceStr}
               ${catStr}
               ${paidStr}
               ${customStr}
+              ${reminderStr}
             </div>
             ${noteStr}
           </div>
@@ -530,6 +540,18 @@ function renderRightPage(day) {
   if (addBtn) {
     addBtn.addEventListener('click', () => openAddModal(addBtn.dataset.addDay));
   }
+
+  // Detail sheet listeners
+  document.querySelectorAll('.act-body[data-detail-id]').forEach(body => {
+    body.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openDetailSheet(body.dataset.detailId);
+    });
+  });
+
+  // Drag & drop
+  const rightContent = document.getElementById('rightContent');
+  if (rightContent) initActivityDragDrop(rightContent);
 }
 
 // ── Tips Page Render ──────────────────────────────────────────────────────────
@@ -762,12 +784,16 @@ function renderCalendarDayDetail(days, container) {
       const catStr   = `<span class="act-cat">${catEmoji} ${escapeHtml(act.category)}</span>`;
       const paidStr  = act.isPaid ? `<span class="act-paid-badge">✓ PAYÉ</span>` : '';
       const noteStr  = act.note ? `<div class="act-note">${escapeHtml(act.note)}</div>` : '';
+      const prioColorCal = { high: '#C62828', medium: '#C9A84C', low: '#4CAF50' }[act.priority || 'medium'];
+      const remStrCal = act.reminder ? `<span class="act-reminder-badge">🔔 ${escapeHtml(act.reminder)}</span>` : '';
+      const prioDotCal = `<span class="act-priority-dot" style="background:${prioColorCal}"></span>`;
       html += `
-        <li class="activity-item${checked ? ' done' : ''}" data-activity-item="${act.id}">
+        <li class="activity-item${checked ? ' done' : ''}" data-activity-item="${act.id}" data-priority="${act.priority || 'medium'}" draggable="true">
+          <span class="drag-handle" aria-hidden="true">⠿</span>
           <div class="act-checkbox${checked ? ' checked' : ''}" data-act-id="${act.id}" role="checkbox" aria-checked="${checked}" tabindex="0" aria-label="Marquer : ${escapeHtml(act.name)}"></div>
-          <div class="act-body">
+          <div class="act-body" data-detail-id="${act.id}">
             <div class="act-name">${escapeHtml(act.name)}</div>
-            <div class="act-meta">${priceStr}${catStr}${paidStr}</div>
+            <div class="act-meta">${prioDotCal}${priceStr}${catStr}${paidStr}${remStrCal}</div>
             ${noteStr}
           </div>
           <div class="act-actions">
@@ -803,6 +829,11 @@ function renderCalendarDayDetail(days, container) {
   });
   const addBtn = container.querySelector('.add-activity-btn[data-add-day]');
   if (addBtn) addBtn.addEventListener('click', () => openAddModal(addBtn.dataset.addDay));
+
+  container.querySelectorAll('.act-body[data-detail-id]').forEach(body => {
+    body.addEventListener('click', e => { e.stopPropagation(); openDetailSheet(body.dataset.detailId); });
+  });
+  initActivityDragDrop(container);
 }
 
 // ── Phrases Page Render ───────────────────────────────────────────────────────
@@ -1154,6 +1185,7 @@ function setCity(cityId) {
   state.isPhrasesPage  = false;
   state.isBudgetPage   = false;
 
+  const bookContainer = document.getElementById('bookContainer');
   const SPECIAL = ['tips', 'calendar', 'phrases', 'budget'];
 
   if (SPECIAL.includes(cityId)) {
@@ -1161,12 +1193,14 @@ function setCity(cityId) {
     if (cityId === 'calendar') state.isCalendarPage = true;
     if (cityId === 'phrases')  state.isPhrasesPage  = true;
     if (cityId === 'budget')   state.isBudgetPage   = true;
+    bookContainer?.classList.add('special-mode');
     document.querySelectorAll('.city-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.city === cityId);
     });
     animatePages('forward');
     renderBook();
   } else {
+    bookContainer?.classList.remove('special-mode');
     state.currentCity = cityId;
     state.currentDayIndex = 0;
     document.querySelectorAll('.city-btn').forEach(btn => {
@@ -1189,6 +1223,8 @@ async function updateActivity(actId, data) {
   act.category = data.category || act.category;
   act.isPaid   = data.isPaid === true;
   act.note     = data.note || '';
+  act.priority = data.priority || act.priority || 'medium';
+  act.reminder = data.reminder || null;
 
   // Handle date / day change
   if (data.dayId && data.dayId !== act.dayId) {
@@ -1220,6 +1256,8 @@ function openEditModal(actId) {
   document.getElementById('addCategory').value = act.category || 'visite';
   document.getElementById('addNote').value     = act.note || '';
   document.getElementById('addPaid').checked   = act.isPaid === true;
+  if (document.getElementById('addPriority')) document.getElementById('addPriority').value = act.priority || 'medium';
+  if (document.getElementById('addReminder')) document.getElementById('addReminder').value = act.reminder || '';
 
   const daySelectWrap = document.getElementById('addDaySelectWrap');
   const daySelect     = document.getElementById('addDaySelect');
@@ -1275,6 +1313,16 @@ function injectModal() {
         <label class="add-label">Note (optionnel)
           <input type="text" id="addNote" class="add-input" maxlength="120" placeholder="Horaire, adresse, détail…" />
         </label>
+        <label class="add-label">Priorité
+          <select id="addPriority" class="add-input">
+            <option value="medium">🟡 Moyenne</option>
+            <option value="high">🔴 Haute</option>
+            <option value="low">🟢 Basse</option>
+          </select>
+        </label>
+        <label class="add-label">Rappel (heure facultatif)
+          <input type="time" id="addReminder" class="add-input" />
+        </label>
         <label class="add-checkbox-row">
           <input type="checkbox" id="addPaid" /> Déjà payé / réservé
         </label>
@@ -1315,6 +1363,8 @@ function injectModal() {
       category: document.getElementById('addCategory').value,
       note: document.getElementById('addNote').value.trim(),
       isPaid: document.getElementById('addPaid').checked,
+      priority: document.getElementById('addPriority')?.value || 'medium',
+      reminder: document.getElementById('addReminder')?.value || null,
     };
 
     if (mode === 'edit') {
@@ -1546,6 +1596,240 @@ function subscribeToPeople(db, collection, onSnapshot) {
   );
 }
 
+
+// ── Scroll-aware header ───────────────────────────────────────────────────────
+function initScrollHeader() {
+  let lastScrollY = window.scrollY;
+  const header = document.querySelector('.app-header');
+  if (!header) return;
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY;
+    if (y > lastScrollY && y > 80) {
+      header.classList.add('header-hidden');
+    } else {
+      header.classList.remove('header-hidden');
+    }
+    lastScrollY = Math.max(0, y);
+  }, { passive: true });
+}
+
+// ── Tab reordering ────────────────────────────────────────────────────────────
+function saveTabOrder() {
+  const nav = document.querySelector('.city-nav');
+  if (!nav) return;
+  const order = Array.from(nav.querySelectorAll('.city-btn')).map(b => b.dataset.city);
+  try { localStorage.setItem('japon2026_tab_order_v1', JSON.stringify(order)); } catch(e) {}
+}
+
+function applyTabOrder() {
+  const nav = document.querySelector('.city-nav');
+  if (!nav) return;
+  try {
+    const raw = localStorage.getItem('japon2026_tab_order_v1');
+    if (!raw) return;
+    const order = JSON.parse(raw);
+    const buttons = Array.from(nav.querySelectorAll('.city-btn'));
+    const ordered = order.map(id => buttons.find(b => b.dataset.city === id)).filter(Boolean);
+    buttons.filter(b => !order.includes(b.dataset.city)).forEach(b => ordered.push(b));
+    ordered.forEach(b => nav.appendChild(b));
+  } catch(e) {}
+}
+
+function initTabReorder() {
+  applyTabOrder();
+  const nav = document.querySelector('.city-nav');
+  if (!nav) return;
+  let tabDragSrc = null;
+
+  nav.querySelectorAll('.city-btn').forEach(btn => {
+    btn.setAttribute('draggable', 'true');
+
+    btn.addEventListener('dragstart', e => {
+      tabDragSrc = btn;
+      btn.classList.add('tab-dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    btn.addEventListener('dragend', () => {
+      btn.classList.remove('tab-dragging');
+      nav.querySelectorAll('.city-btn').forEach(b => b.classList.remove('tab-drag-over'));
+      saveTabOrder();
+    });
+    btn.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (tabDragSrc && tabDragSrc !== btn) {
+        nav.querySelectorAll('.city-btn').forEach(b => b.classList.remove('tab-drag-over'));
+        btn.classList.add('tab-drag-over');
+      }
+    });
+    btn.addEventListener('dragleave', () => btn.classList.remove('tab-drag-over'));
+    btn.addEventListener('drop', e => {
+      e.preventDefault();
+      if (tabDragSrc && tabDragSrc !== btn) {
+        const items = Array.from(nav.querySelectorAll('.city-btn'));
+        const si = items.indexOf(tabDragSrc);
+        const ti = items.indexOf(btn);
+        if (si < ti) btn.after(tabDragSrc);
+        else btn.before(tabDragSrc);
+      }
+    });
+  });
+}
+
+// ── Activity drag & drop reordering ──────────────────────────────────────────
+function initActivityDragDrop(container) {
+  let actDragSrc = null;
+
+  container.querySelectorAll('.activity-item[draggable]').forEach(item => {
+    item.addEventListener('dragstart', e => {
+      actDragSrc = item;
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      container.querySelectorAll('.activity-item').forEach(i => i.classList.remove('drag-over'));
+    });
+    item.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (actDragSrc && actDragSrc !== item) {
+        container.querySelectorAll('.activity-item').forEach(i => i.classList.remove('drag-over'));
+        item.classList.add('drag-over');
+      }
+    });
+    item.addEventListener('dragleave', e => {
+      if (!item.contains(e.relatedTarget)) item.classList.remove('drag-over');
+    });
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      if (actDragSrc && actDragSrc !== item) {
+        reorderActivities(actDragSrc.dataset.activityItem, item.dataset.activityItem);
+      }
+    });
+  });
+}
+
+async function reorderActivities(srcId, tgtId) {
+  const srcAct = state.activities[srcId];
+  const tgtAct = state.activities[tgtId];
+  if (!srcAct || !tgtAct || srcAct.dayId !== tgtAct.dayId) return;
+
+  const dayActs = getDayActivities(srcAct.dayId);
+  const si = dayActs.findIndex(a => a.id === srcId);
+  const ti = dayActs.findIndex(a => a.id === tgtId);
+  if (si === -1 || ti === -1) return;
+
+  const [moved] = dayActs.splice(si, 1);
+  dayActs.splice(ti, 0, moved);
+  dayActs.forEach((a, i) => { a.order = i; });
+
+  renderBook();
+  saveToLocalStorage();
+  showToast('↕️ Ordre mis à jour');
+  for (const a of dayActs) await persistActivity(a.id, a);
+}
+
+// ── Activity detail bottom sheet ──────────────────────────────────────────────
+const PRIORITY_LABELS = { high: 'Haute', medium: 'Moyenne', low: 'Basse' };
+const PRIORITY_COLORS = { high: '#C62828', medium: '#C9A84C', low: '#4CAF50' };
+const PRIORITY_EMOJIS = { high: '🔴', medium: '🟡', low: '🟢' };
+
+function injectDetailSheet() {
+  if (document.getElementById('detailSheet')) return;
+  const sheet = document.createElement('div');
+  sheet.id = 'detailSheet';
+  sheet.className = 'detail-sheet';
+  sheet.hidden = true;
+  sheet.innerHTML = `
+    <div class="detail-sheet-backdrop" id="detailBackdrop"></div>
+    <div class="detail-sheet-box" role="dialog" aria-modal="true" aria-label="Détails de l\'activité">
+      <div class="detail-drag-handle"></div>
+      <button class="detail-close" id="detailClose" aria-label="Fermer">✕</button>
+      <div class="detail-priority-bar" id="detailPriorityBar"></div>
+      <h3 class="detail-title" id="detailTitle"></h3>
+      <div class="detail-meta" id="detailMeta"></div>
+      <div class="detail-note" id="detailNote" style="display:none"></div>
+      <div class="detail-actions">
+        <button class="detail-edit-btn" id="detailEditBtn">✏️ Modifier</button>
+        <button class="detail-del-btn" id="detailDelBtn">🗑️ Supprimer</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(sheet);
+
+  const closeSheet = () => {
+    sheet.classList.remove('show');
+    setTimeout(() => { sheet.hidden = true; }, 300);
+  };
+  document.getElementById('detailBackdrop').addEventListener('click', closeSheet);
+  document.getElementById('detailClose').addEventListener('click', closeSheet);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !sheet.hidden) closeSheet(); });
+
+  document.getElementById('detailEditBtn').addEventListener('click', () => {
+    const id = sheet.dataset.actId;
+    closeSheet();
+    setTimeout(() => openEditModal(id), 50);
+  });
+  document.getElementById('detailDelBtn').addEventListener('click', () => {
+    closeSheet();
+    deleteActivity(sheet.dataset.actId);
+  });
+}
+
+function openDetailSheet(actId) {
+  const act = state.activities[actId];
+  if (!act) return;
+  const sheet = document.getElementById('detailSheet');
+  if (!sheet) return;
+
+  sheet.dataset.actId = actId;
+  const prio = act.priority || 'medium';
+  const color = PRIORITY_COLORS[prio];
+  const day = ALL_DAYS.find(d => d.id === act.dayId);
+
+  document.getElementById('detailPriorityBar').style.background = color;
+  document.getElementById('detailTitle').textContent = act.name;
+
+  let metaHtml = '';
+  if (day) metaHtml += `<span class="detail-meta-item">📅 ${escapeHtml(day.label.split(' ').slice(0, 3).join(' '))}</span>`;
+  if (act.priceEur > 0) metaHtml += `<span class="detail-meta-item">💶 ${act.priceEur} €</span>`;
+  if (act.priceJpy > 0) metaHtml += `<span class="detail-meta-item">💴 ${act.priceJpy.toLocaleString()} ¥</span>`;
+  metaHtml += `<span class="detail-meta-item">${CAT_EMOJI[act.category] || '📌'} ${escapeHtml(act.category)}</span>`;
+  metaHtml += `<span class="detail-meta-item priority-badge" style="background:${color}22;color:${color}">${PRIORITY_EMOJIS[prio]} Priorité ${PRIORITY_LABELS[prio]}</span>`;
+  if (act.isPaid) metaHtml += `<span class="detail-meta-item paid-badge">✓ PAYÉ</span>`;
+  if (act.reminder) metaHtml += `<span class="detail-meta-item">🔔 ${escapeHtml(act.reminder)}</span>`;
+
+  document.getElementById('detailMeta').innerHTML = metaHtml;
+  const noteEl = document.getElementById('detailNote');
+  noteEl.textContent = act.note || '';
+  noteEl.style.display = act.note ? 'block' : 'none';
+
+  sheet.hidden = false;
+  requestAnimationFrame(() => sheet.classList.add('show'));
+}
+
+// ── Reminder scheduling ───────────────────────────────────────────────────────
+function scheduleReminders() {
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  ALL_DAYS.filter(d => d.date === todayStr).forEach(day => {
+    getDayActivities(day.id).forEach(act => {
+      if (!act.reminder || act.checked) return;
+      const [h, m] = act.reminder.split(':').map(Number);
+      const t = new Date(now);
+      t.setHours(h, m, 0, 0);
+      const diff = t - now;
+      if (diff > 0 && diff < 12 * 60 * 60 * 1000) {
+        setTimeout(() => {
+          showToast(`🔔 Rappel : ${act.name}`, 6000);
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('Japon 2026', { body: act.name });
+          }
+        }, diff);
+      }
+    });
+  });
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
   // Load local state first for instant UI
@@ -1573,11 +1857,28 @@ async function init() {
   // Inject the add-activity modal
   injectModal();
   injectExpenseModal();
+  injectDetailSheet();
+
+  // Smart scroll-hide header
+  initScrollHeader();
+
+  // Tab drag reorder
+  initTabReorder();
 
   // Initial render
   renderBook();
   renderBudget();
   updateNavButtons();
+
+  // Schedule any reminders for today
+  scheduleReminders();
+
+  // Request notification permission on next interaction
+  document.addEventListener('click', () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, { once: true });
 
   // Try Firebase
   try {
