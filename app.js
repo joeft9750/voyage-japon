@@ -896,10 +896,7 @@ function getPhraseSections() {
 
 function renderPhraseSection(section) {
   let html = `<div class="phrase-section">
-    <div class="phrase-section-title">
-      <span>${section.title}</span>
-      <button class="phrase-section-add-btn" data-add-phrase-section="${escapeHtml(section.title)}" title="Ajouter une phrase">＋</button>
-    </div>
+    <div class="phrase-section-title">${section.title}</div>
     <ul class="phrase-list">`;
   section.items.forEach(p => {
     html += `
@@ -917,7 +914,9 @@ function renderPhraseSection(section) {
         </div>
       </li>`;
   });
-  html += `</ul></div>`;
+  html += `</ul>
+    <button class="phrase-add-row-btn" data-add-phrase-section="${escapeHtml(section.title)}">＋ Ajouter une phrase</button>
+  </div>`;
   return html;
 }
 
@@ -944,7 +943,7 @@ function renderPhrasesPage() {
   leftEl.innerHTML  = leftHtml;
   rightEl.innerHTML = rightHtml;
 
-  document.querySelectorAll('.phrase-section-add-btn[data-add-phrase-section]').forEach(btn => {
+  document.querySelectorAll('.phrase-add-row-btn[data-add-phrase-section]').forEach(btn => {
     btn.addEventListener('click', () => openPhraseModal(null, btn.dataset.addPhraseSection));
   });
   document.querySelectorAll('.phrase-edit-btn[data-edit-phrase]').forEach(btn => {
@@ -1727,21 +1726,29 @@ async function setupFirebase(config) {
 
 async function seedDatabase(db, getDocs, collection, doc, writeBatch, setDoc) {
   try {
-    const snap = await getDocs(collection(db, 'activities'));
-    if (!snap.empty) return; // Already seeded – the cloud is the source of truth
+    const [actSnap, phraseSnap] = await Promise.all([
+      getDocs(collection(db, 'activities')),
+      getDocs(collection(db, 'phrases')),
+    ]);
 
     const batch = writeBatch(db);
-    SEED_ACTIVITIES.forEach(act => {
-      const ref = doc(db, 'activities', act.id);
-      batch.set(ref, toRecord(act));
-    });
-    const seedPhrases = buildSeedPhrases();
-    Object.values(seedPhrases).forEach(p => {
-      const ref = doc(db, 'phrases', p.id);
-      batch.set(ref, { section: p.section, fr: p.fr, jp: p.jp, ro: p.ro });
-    });
-    await batch.commit();
-    console.log('Database seeded');
+    let needsCommit = false;
+
+    if (actSnap.empty) {
+      SEED_ACTIVITIES.forEach(act => {
+        batch.set(doc(db, 'activities', act.id), toRecord(act));
+      });
+      needsCommit = true;
+    }
+
+    if (phraseSnap.empty) {
+      Object.values(buildSeedPhrases()).forEach(p => {
+        batch.set(doc(db, 'phrases', p.id), { section: p.section, fr: p.fr, jp: p.jp, ro: p.ro });
+      });
+      needsCommit = true;
+    }
+
+    if (needsCommit) await batch.commit();
   } catch (e) {
     console.error('Seed error:', e);
   }
