@@ -2198,6 +2198,13 @@ async function init() {
     if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   navigate('prev');
   });
 
+  // Logo → retour calendrier
+  const logo = document.getElementById('logoHome');
+  if (logo) {
+    logo.addEventListener('click', () => setCity('calendar'));
+    logo.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') setCity('calendar'); });
+  }
+
   // Spawn sakura
   spawnSakura();
 
