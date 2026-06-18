@@ -1423,6 +1423,20 @@ button { border: none; background: none; cursor: pointer; font-family: inherit; 
 }
 .phrase-edit-btn:hover   { background: #f0e8d0; }
 .phrase-delete-btn:hover { background: #fce4e4; }
+.phrase-audio-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 1px 3px;
+  border-radius: 4px;
+  line-height: 1;
+  vertical-align: middle;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.phrase-audio-btn:hover   { background: rgba(0,0,0,0.06); }
+.phrase-audio-btn:disabled { opacity: 0.5; cursor: default; }
 .phrase-fr {
   font-size: 0.82rem;
   font-weight: 600;

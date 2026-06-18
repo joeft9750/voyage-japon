@@ -899,12 +899,16 @@ function renderPhraseSection(section) {
     <div class="phrase-section-title">${section.title}</div>
     <ul class="phrase-list">`;
   section.items.forEach(p => {
+    const audioBtn = p.jp
+      ? `<button class="phrase-audio-btn" data-phrase-audio="${escapeHtml(p.jp)}" aria-label="Écouter">🔊</button>`
+      : '';
     html += `
       <li class="phrase-item" data-phrase-id="${p.id}">
         <div class="phrase-item-body">
           <div class="phrase-fr">${escapeHtml(p.fr)}</div>
           <div class="phrase-jp-row">
             <span class="phrase-jp">${escapeHtml(p.jp)}</span>
+            ${audioBtn}
             <span class="phrase-ro">${escapeHtml(p.ro)}</span>
           </div>
         </div>
@@ -952,6 +956,27 @@ function renderPhrasesPage() {
   document.querySelectorAll('.phrase-delete-btn[data-del-phrase]').forEach(btn => {
     btn.addEventListener('click', () => deletePhrase(btn.dataset.delPhrase));
   });
+  document.querySelectorAll('.phrase-audio-btn[data-phrase-audio]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      speakJapanese(btn.dataset.phraseAudio, btn);
+    });
+  });
+}
+
+// ── Phrase Audio (Web Speech API) ─────────────────────────────────────────────
+function speakJapanese(text, btn) {
+  if (!text || !window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'ja-JP';
+  utt.rate = 0.85;
+  if (btn) {
+    btn.textContent = '🔈';
+    btn.disabled = true;
+    utt.onend = utt.onerror = () => { btn.textContent = '🔊'; btn.disabled = false; };
+  }
+  window.speechSynthesis.speak(utt);
 }
 
 // ── Phrase Modal ───────────────────────────────────────────────────────────────
