@@ -1145,3 +1145,460 @@ button { border: none; background: none; cursor: pointer; font-family: inherit; 
   color: #fff;
 }
 .add-submit:hover { background: var(--red-dark); }
+
+/* ══════════════════════════════════════════
+   CALENDAR PAGE
+══════════════════════════════════════════ */
+.cal-title {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1.05rem;
+  color: var(--red-dark);
+  text-align: center;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--gold);
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+.cal-title-jp {
+  display: block;
+  font-size: 0.68rem;
+  font-family: 'Poppins', sans-serif;
+  color: var(--ink-light);
+  margin-bottom: 2px;
+  letter-spacing: 0.05em;
+}
+.cal-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.68rem;
+  font-family: 'Poppins', sans-serif;
+  color: var(--ink-light);
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.cal-legend-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.cal-grid { width: 100%; }
+.cal-week-headers {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 2px;
+}
+.cal-wh {
+  text-align: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--ink-light);
+  padding: 2px 0;
+  font-family: 'Poppins', sans-serif;
+  letter-spacing: 0.03em;
+}
+.cal-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.cal-cell {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 400;
+  color: #aaa;
+  background: rgba(0,0,0,0.04);
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+  transition: transform 0.12s, box-shadow 0.12s;
+  user-select: none;
+}
+.cal-cell.empty {
+  background: transparent;
+}
+.cal-cell--trip {
+  cursor: pointer;
+  font-weight: 600;
+}
+.cal-cell--trip:hover {
+  transform: scale(1.1);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.22);
+  z-index: 2;
+}
+.cal-cell--selected {
+  outline: 3px solid var(--gold);
+  outline-offset: -1px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.28);
+  z-index: 3;
+  transform: scale(1.06);
+}
+.cal-day-num {
+  font-size: 0.76rem;
+  line-height: 1;
+}
+.cal-dots {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 3px;
+  max-width: 90%;
+}
+.cal-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Prompt when nothing is selected */
+.cal-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 220px;
+  gap: 14px;
+  text-align: center;
+  padding: 20px;
+}
+.cal-prompt-icon { font-size: 2.8rem; }
+.cal-prompt-text {
+  font-family: 'Caveat', cursive;
+  font-size: 1.15rem;
+  line-height: 1.5;
+  color: var(--ink-light);
+  max-width: 200px;
+}
+
+/* Selected day detail (right page) */
+.cal-detail-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--cream-dark);
+}
+.cal-detail-date {
+  font-family: 'Caveat', cursive;
+  font-size: 1.15rem;
+  color: var(--ink);
+  flex: 1;
+}
+.cal-detail-multi {
+  font-size: 0.75rem;
+  color: var(--ink-light);
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ══════════════════════════════════════════
+   PHRASES PAGE
+══════════════════════════════════════════ */
+.phrases-head {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1.25rem;
+  color: var(--red-dark);
+  text-align: center;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--gold);
+  margin-bottom: 12px;
+  line-height: 1.3;
+}
+.phrases-head-jp {
+  display: block;
+  font-size: 0.7rem;
+  font-family: 'Poppins', sans-serif;
+  color: var(--ink-light);
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+.phrases-head-sub {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.7rem;
+  color: var(--ink-light);
+  margin-top: 4px;
+}
+.phrases-head-right {
+  font-family: 'Caveat', cursive;
+  font-size: 1.6rem;
+  color: var(--ink);
+  border-bottom: 1px solid var(--cream-dark);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+.phrase-section { margin-bottom: 14px; }
+.phrase-section-title {
+  font-family: 'Caveat', cursive;
+  font-size: 1.25rem;
+  color: var(--red-dark);
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--gold);
+  padding-bottom: 4px;
+}
+.phrase-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.phrase-item {
+  background: rgba(255,255,255,0.65);
+  border: 1px solid var(--cream-dark);
+  border-radius: 8px;
+  padding: 8px 11px;
+}
+.phrase-fr {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+}
+.phrase-jp-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 3px;
+}
+.phrase-jp {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 0.95rem;
+  color: var(--red-dark);
+}
+.phrase-ro {
+  font-size: 0.75rem;
+  font-style: italic;
+  color: #7A6A50;
+}
+
+/* ══════════════════════════════════════════
+   BUDGET PAGE (personal expenses)
+══════════════════════════════════════════ */
+.budget-head {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1.25rem;
+  color: var(--red-dark);
+  text-align: center;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--gold);
+  margin-bottom: 12px;
+  line-height: 1.3;
+}
+.budget-head-jp {
+  display: block;
+  font-size: 0.7rem;
+  font-family: 'Poppins', sans-serif;
+  color: var(--ink-light);
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+.budget-head-sub {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.7rem;
+  color: var(--ink-light);
+  margin-top: 4px;
+}
+.budget-total-card {
+  background: linear-gradient(135deg, var(--red-dark), var(--red));
+  color: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 14px rgba(139,0,0,0.25);
+}
+.budget-total-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  opacity: 0.85;
+}
+.budget-total-val {
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--gold-light);
+  line-height: 1.2;
+  margin: 2px 0;
+}
+.budget-total-avg {
+  font-size: 0.72rem;
+  opacity: 0.8;
+}
+.budget-summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.budget-summary-row {
+  display: grid;
+  grid-template-columns: 1fr 70px auto;
+  align-items: center;
+  gap: 8px;
+}
+.budget-summary-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.budget-pers-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.budget-summary-bar {
+  height: 8px;
+  background: #E0D0B0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.budget-summary-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+.budget-summary-amt {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Person cards (right page) */
+.budget-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.budget-card {
+  background: rgba(255,255,255,0.7);
+  border: 1px solid var(--cream-dark);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+.budget-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--cream-dark);
+  padding-bottom: 6px;
+}
+.budget-card-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.budget-card-total {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.budget-exp-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-height: 30px;
+}
+.budget-exp-empty {
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--ink-light);
+  opacity: 0.7;
+  text-align: center;
+  padding: 6px 0;
+}
+.budget-exp-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+}
+.budget-exp-label {
+  flex: 1;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.budget-exp-amt {
+  font-weight: 700;
+  color: var(--red-dark);
+  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.1;
+}
+.budget-exp-jpy {
+  font-size: 0.62rem;
+  font-weight: 400;
+  color: #7A6A50;
+}
+.budget-exp-del {
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  color: #C0392B;
+  cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1;
+  border-radius: 4px;
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: opacity 0.15s, background 0.15s;
+}
+.budget-exp-del:hover {
+  opacity: 1;
+  background: rgba(192,57,43,0.12);
+}
+.budget-add-btn {
+  margin-top: 10px;
+  width: 100%;
+  padding: 7px;
+  background: transparent;
+  border: 1.5px dashed currentColor;
+  border-radius: 8px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+.budget-add-btn:hover {
+  background: rgba(0,0,0,0.06);
+}
+.exp-person-line {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--ink-light);
+  margin: -8px 0 14px;
+  font-weight: 600;
+}
+
+@media (max-width: 480px) {
+  .budget-cards { grid-template-columns: 1fr; }
+}
