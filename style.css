@@ -124,22 +124,31 @@ button { border: none; background: none; cursor: pointer; font-family: inherit; 
 
 .header-title {
   display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header-title .title-logo {
+  font-size: 2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.header-title .title-text {
+  display: flex;
   flex-direction: column;
 }
-
-.header-title .title-jp {
-  font-family: 'Noto Serif JP', serif;
-  font-size: 1.3rem;
-  opacity: 0.9;
-  line-height: 1.2;
-}
-
 .header-title .title-fr {
+  font-family: 'Caveat', cursive;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.1;
+  letter-spacing: 0.2px;
+}
+.header-title .title-sub {
   font-family: 'Poppins', sans-serif;
-  font-size: 0.75rem;
-  opacity: 0.7;
-  display: block;
-  letter-spacing: 0.5px;
+  font-size: 0.68rem;
+  opacity: 0.6;
+  letter-spacing: 0.4px;
 }
 
 .budget-bar {
@@ -944,7 +953,9 @@ button { border: none; background: none; cursor: pointer; font-family: inherit; 
   .city-dates { font-size: 0.6rem; }
 
   .header-title .title-jp { font-size: 1.05rem; }
-  .header-title .title-fr { font-size: 0.65rem; }
+  .header-title .title-logo { font-size: 1.6rem; }
+  .header-title .title-fr   { font-size: 1.1rem; }
+  .header-title .title-sub  { font-size: 0.6rem; }
 }
 
 /* ═══════════════════════════════════════════════════════════════
