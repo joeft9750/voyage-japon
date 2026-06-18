@@ -1362,6 +1362,9 @@ button { border: none; background: none; cursor: pointer; font-family: inherit; 
 }
 .phrase-section { margin-bottom: 14px; }
 .phrase-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-family: 'Caveat', cursive;
   font-size: 1.25rem;
   color: var(--red-dark);
@@ -1369,6 +1372,24 @@ button { border: none; background: none; cursor: pointer; font-family: inherit; 
   border-bottom: 1px solid var(--gold);
   padding-bottom: 4px;
 }
+.phrase-section-add-btn {
+  background: none;
+  border: 1.5px solid var(--gold);
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  line-height: 1;
+  color: var(--gold);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+  font-family: 'Poppins', sans-serif;
+}
+.phrase-section-add-btn:hover { background: var(--gold); color: #fff; }
 .phrase-list {
   list-style: none;
   display: flex;
@@ -1380,7 +1401,34 @@ button { border: none; background: none; cursor: pointer; font-family: inherit; 
   border: 1px solid var(--cream-dark);
   border-radius: 8px;
   padding: 8px 11px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
 }
+.phrase-item-body { flex: 1; min-width: 0; }
+.phrase-item-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.phrase-item:hover .phrase-item-actions,
+.phrase-item:focus-within .phrase-item-actions { opacity: 1; }
+@media (hover: none) { .phrase-item-actions { opacity: 1; } }
+.phrase-edit-btn, .phrase-delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 3px 4px;
+  border-radius: 4px;
+  color: var(--ink-light);
+  transition: background 0.15s;
+  line-height: 1;
+}
+.phrase-edit-btn:hover   { background: #f0e8d0; }
+.phrase-delete-btn:hover { background: #fce4e4; }
 .phrase-fr {
   font-size: 0.82rem;
   font-weight: 600;

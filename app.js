@@ -21,6 +21,7 @@ const state = {
   activities: {},        // activityId → full activity record (single source of truth)
   expenses: {},          // expenseId → personal expense record (synced)
   peopleNames: {},       // personId → custom display name (synced)
+  phrases: {},           // phraseId → {id, section, fr, jp, ro}
   isOnline: false,
   isTipsPage: false,
   isCalendarPage: false,
@@ -70,6 +71,17 @@ function buildSeedState() {
   return map;
 }
 
+function buildSeedPhrases() {
+  const map = {};
+  PHRASES.forEach((section, si) => {
+    section.items.forEach((p, pi) => {
+      const id = `ph_${si}_${pi}`;
+      map[id] = { id, section: section.title, fr: p.fr, jp: p.jp, ro: p.ro };
+    });
+  });
+  return map;
+}
+
 // Strip undefined and keep only persistable fields for Firestore
 function toRecord(act) {
   return {
@@ -114,6 +126,31 @@ function saveToLocalStorage() {
     localStorage.setItem('japon2026_activities_v2', JSON.stringify(state.activities));
   } catch (e) {
     console.warn('LocalStorage write error:', e);
+  }
+}
+
+// Phrases – separate storage key
+function loadPhrasesFromLocalStorage() {
+  try {
+    const raw = localStorage.getItem('japon2026_phrases_v1');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+        state.phrases = parsed;
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('LocalStorage read error (phrases):', e);
+  }
+  state.phrases = buildSeedPhrases();
+}
+
+function savePhrasesToLocalStorage() {
+  try {
+    localStorage.setItem('japon2026_phrases_v1', JSON.stringify(state.phrases));
+  } catch (e) {
+    console.warn('LocalStorage write error (phrases):', e);
   }
 }
 
@@ -837,17 +874,46 @@ function renderCalendarDayDetail(days, container) {
 }
 
 // ── Phrases Page Render ───────────────────────────────────────────────────────
+function getPhraseSections() {
+  const knownOrder = PHRASES.map(s => s.title);
+  const bySection = {};
+  for (const phrase of Object.values(state.phrases)) {
+    if (!bySection[phrase.section]) bySection[phrase.section] = [];
+    bySection[phrase.section].push(phrase);
+  }
+  for (const title of Object.keys(bySection)) {
+    bySection[title].sort((a, b) => (a.id < b.id ? -1 : 1));
+  }
+  const ordered = [];
+  for (const title of knownOrder) {
+    if (bySection[title]) ordered.push({ title, items: bySection[title] });
+  }
+  for (const title of Object.keys(bySection)) {
+    if (!knownOrder.includes(title)) ordered.push({ title, items: bySection[title] });
+  }
+  return ordered;
+}
+
 function renderPhraseSection(section) {
   let html = `<div class="phrase-section">
-    <div class="phrase-section-title">${section.title}</div>
+    <div class="phrase-section-title">
+      <span>${section.title}</span>
+      <button class="phrase-section-add-btn" data-add-phrase-section="${escapeHtml(section.title)}" title="Ajouter une phrase">＋</button>
+    </div>
     <ul class="phrase-list">`;
   section.items.forEach(p => {
     html += `
-      <li class="phrase-item">
-        <div class="phrase-fr">${escapeHtml(p.fr)}</div>
-        <div class="phrase-jp-row">
-          <span class="phrase-jp">${escapeHtml(p.jp)}</span>
-          <span class="phrase-ro">${escapeHtml(p.ro)}</span>
+      <li class="phrase-item" data-phrase-id="${p.id}">
+        <div class="phrase-item-body">
+          <div class="phrase-fr">${escapeHtml(p.fr)}</div>
+          <div class="phrase-jp-row">
+            <span class="phrase-jp">${escapeHtml(p.jp)}</span>
+            <span class="phrase-ro">${escapeHtml(p.ro)}</span>
+          </div>
+        </div>
+        <div class="phrase-item-actions">
+          <button class="phrase-edit-btn" data-edit-phrase="${p.id}" aria-label="Modifier">✏️</button>
+          <button class="phrase-delete-btn" data-del-phrase="${p.id}" aria-label="Supprimer">🗑️</button>
         </div>
       </li>`;
   });
@@ -860,10 +926,8 @@ function renderPhrasesPage() {
   const rightEl = document.getElementById('rightContent');
   if (!leftEl || !rightEl) return;
 
-  // Split sections across the two pages
-  const half = Math.ceil(PHRASES.length / 2);
-  const leftSections  = PHRASES.slice(0, half);
-  const rightSections = PHRASES.slice(half);
+  const sections = getPhraseSections();
+  const half = Math.ceil(sections.length / 2);
 
   let leftHtml = `
     <div class="phrases-head">
@@ -872,13 +936,113 @@ function renderPhrasesPage() {
       <div class="phrases-head-sub">À utiliser dans les commerces & au quotidien</div>
     </div>
   `;
-  leftSections.forEach(s => { leftHtml += renderPhraseSection(s); });
+  sections.slice(0, half).forEach(s => { leftHtml += renderPhraseSection(s); });
 
   let rightHtml = `<div class="phrases-head-right">Au quotidien 🗣️</div>`;
-  rightSections.forEach(s => { rightHtml += renderPhraseSection(s); });
+  sections.slice(half).forEach(s => { rightHtml += renderPhraseSection(s); });
 
   leftEl.innerHTML  = leftHtml;
   rightEl.innerHTML = rightHtml;
+
+  document.querySelectorAll('.phrase-section-add-btn[data-add-phrase-section]').forEach(btn => {
+    btn.addEventListener('click', () => openPhraseModal(null, btn.dataset.addPhraseSection));
+  });
+  document.querySelectorAll('.phrase-edit-btn[data-edit-phrase]').forEach(btn => {
+    btn.addEventListener('click', () => openPhraseModal(btn.dataset.editPhrase));
+  });
+  document.querySelectorAll('.phrase-delete-btn[data-del-phrase]').forEach(btn => {
+    btn.addEventListener('click', () => deletePhrase(btn.dataset.delPhrase));
+  });
+}
+
+// ── Phrase Modal ───────────────────────────────────────────────────────────────
+function injectPhraseModal() {
+  if (document.getElementById('phraseModal')) return;
+  const sectionOptions = PHRASES.map(s =>
+    `<option value="${escapeHtml(s.title)}">${escapeHtml(s.title)}</option>`
+  ).join('');
+  const modal = document.createElement('div');
+  modal.className = 'add-modal';
+  modal.id = 'phraseModal';
+  modal.hidden = true;
+  modal.innerHTML = `
+    <div class="add-modal-backdrop" data-close-phrase></div>
+    <div class="add-modal-box" role="dialog" aria-modal="true" aria-label="Phrase japonaise">
+      <button class="add-modal-close" data-close-phrase aria-label="Fermer">✕</button>
+      <h3 class="add-modal-title" id="phraseModalTitle">✨ Nouvelle phrase</h3>
+      <form id="phraseForm" class="add-form" novalidate>
+        <input type="hidden" id="phraseEditId" />
+        <label class="add-label">Catégorie
+          <select id="phraseSection" class="add-input">${sectionOptions}</select>
+        </label>
+        <label class="add-label">Français *
+          <input type="text" id="phraseFr" class="add-input" required maxlength="120" placeholder="Ex : Où est la gare ?" />
+        </label>
+        <label class="add-label">日本語
+          <input type="text" id="phraseJp" class="add-input" maxlength="120" placeholder="Ex : 駅はどこですか？" />
+        </label>
+        <label class="add-label">Romaji
+          <input type="text" id="phraseRo" class="add-input" maxlength="120" placeholder="Ex : Eki wa doko desu ka?" />
+        </label>
+        <div class="add-actions">
+          <button type="button" class="add-cancel" data-close-phrase>Annuler</button>
+          <button type="submit" class="add-submit" id="phraseSubmit">Ajouter</button>
+        </div>
+      </form>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.querySelectorAll('[data-close-phrase]').forEach(el => {
+    el.addEventListener('click', closePhraseModal);
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !modal.hidden) closePhraseModal();
+  });
+  modal.querySelector('#phraseForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const fr = document.getElementById('phraseFr').value.trim();
+    if (!fr) { document.getElementById('phraseFr').focus(); return; }
+    const data = {
+      section: document.getElementById('phraseSection').value,
+      fr,
+      jp: document.getElementById('phraseJp').value.trim(),
+      ro: document.getElementById('phraseRo').value.trim(),
+    };
+    const editId = document.getElementById('phraseEditId').value;
+    if (editId) await updatePhrase(editId, data);
+    else        await addPhrase(data);
+    closePhraseModal();
+  });
+}
+
+function openPhraseModal(phraseId, defaultSection) {
+  const modal = document.getElementById('phraseModal');
+  if (!modal) return;
+  document.getElementById('phraseForm').reset();
+  document.getElementById('phraseEditId').value = '';
+  if (phraseId && state.phrases[phraseId]) {
+    const p = state.phrases[phraseId];
+    document.getElementById('phraseModalTitle').textContent = '✏️ Modifier la phrase';
+    document.getElementById('phraseSubmit').textContent     = 'Enregistrer';
+    document.getElementById('phraseEditId').value  = phraseId;
+    document.getElementById('phraseSection').value = p.section;
+    document.getElementById('phraseFr').value      = p.fr;
+    document.getElementById('phraseJp').value      = p.jp;
+    document.getElementById('phraseRo').value      = p.ro;
+  } else {
+    document.getElementById('phraseModalTitle').textContent = '✨ Nouvelle phrase';
+    document.getElementById('phraseSubmit').textContent     = 'Ajouter';
+    if (defaultSection) document.getElementById('phraseSection').value = defaultSection;
+  }
+  modal.hidden = false;
+  requestAnimationFrame(() => modal.classList.add('show'));
+  setTimeout(() => document.getElementById('phraseFr')?.focus(), 50);
+}
+
+function closePhraseModal() {
+  const modal = document.getElementById('phraseModal');
+  if (!modal) return;
+  modal.classList.remove('show');
+  setTimeout(() => { modal.hidden = true; }, 200);
 }
 
 // ── Personal Budget (expenses) ──────────────────────────────────────────────────
@@ -930,6 +1094,57 @@ async function persistExpense(expId, exp) {
     }
   } else {
     saveExpensesToLocalStorage();
+  }
+}
+
+// ── Phrases CRUD ───────────────────────────────────────────────────────────────
+async function persistPhrase(phraseId, phrase) {
+  if (db) {
+    try {
+      const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      await setDoc(doc(db, 'phrases', phraseId), { section: phrase.section, fr: phrase.fr, jp: phrase.jp, ro: phrase.ro });
+    } catch (e) {
+      console.error('Firestore write error (phrase):', e);
+      savePhrasesToLocalStorage();
+    }
+  } else {
+    savePhrasesToLocalStorage();
+  }
+}
+
+async function addPhrase(data) {
+  const id = 'ph_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+  const phrase = { id, section: data.section, fr: data.fr, jp: data.jp || '', ro: data.ro || '' };
+  state.phrases[id] = phrase;
+  if (state.isPhrasesPage) renderPhrasesPage();
+  showToast('✅ Phrase ajoutée !');
+  await persistPhrase(id, phrase);
+}
+
+async function updatePhrase(phraseId, data) {
+  const phrase = state.phrases[phraseId];
+  if (!phrase) return;
+  Object.assign(phrase, { section: data.section, fr: data.fr, jp: data.jp || '', ro: data.ro || '' });
+  if (state.isPhrasesPage) renderPhrasesPage();
+  showToast('✏️ Phrase modifiée !');
+  await persistPhrase(phraseId, phrase);
+}
+
+async function deletePhrase(phraseId) {
+  if (!confirm('Supprimer cette phrase ?')) return;
+  delete state.phrases[phraseId];
+  if (state.isPhrasesPage) renderPhrasesPage();
+  showToast('🗑️ Phrase supprimée');
+  if (db) {
+    try {
+      const { doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      await deleteDoc(doc(db, 'phrases', phraseId));
+    } catch (e) {
+      console.error('Firestore delete error (phrase):', e);
+      savePhrasesToLocalStorage();
+    }
+  } else {
+    savePhrasesToLocalStorage();
   }
 }
 
@@ -1499,6 +1714,7 @@ async function setupFirebase(config) {
     subscribeToUpdates(db, collection, onSnapshot);
     subscribeToExpenses(db, collection, onSnapshot);
     subscribeToPeople(db, collection, onSnapshot);
+    subscribeToPhrasesUpdates(db, collection, onSnapshot);
 
     updateSyncStatus('online');
     showToast('🔥 Synchronisation Firebase active');
@@ -1519,8 +1735,13 @@ async function seedDatabase(db, getDocs, collection, doc, writeBatch, setDoc) {
       const ref = doc(db, 'activities', act.id);
       batch.set(ref, toRecord(act));
     });
+    const seedPhrases = buildSeedPhrases();
+    Object.values(seedPhrases).forEach(p => {
+      const ref = doc(db, 'phrases', p.id);
+      batch.set(ref, { section: p.section, fr: p.fr, jp: p.jp, ro: p.ro });
+    });
     await batch.commit();
-    console.log('Database seeded with', SEED_ACTIVITIES.length, 'activities');
+    console.log('Database seeded');
   } catch (e) {
     console.error('Seed error:', e);
   }
@@ -1596,6 +1817,26 @@ function subscribeToPeople(db, collection, onSnapshot) {
   );
 }
 
+
+function subscribeToPhrasesUpdates(db, collection, onSnapshot) {
+  onSnapshot(
+    collection(db, 'phrases'),
+    (snap) => {
+      const fresh = {};
+      snap.forEach(docSnap => {
+        fresh[docSnap.id] = { id: docSnap.id, ...docSnap.data() };
+      });
+      if (Object.keys(fresh).length > 0) {
+        state.phrases = fresh;
+        savePhrasesToLocalStorage();
+        if (state.isPhrasesPage) renderPhrasesPage();
+      }
+    },
+    (error) => {
+      console.error('Firestore subscription error (phrases):', error);
+    }
+  );
+}
 
 // ── Scroll-aware header ───────────────────────────────────────────────────────
 function initScrollHeader() {
@@ -1884,6 +2125,7 @@ async function init() {
   loadFromLocalStorage();
   loadExpensesFromLocalStorage();
   loadPeopleFromLocalStorage();
+  loadPhrasesFromLocalStorage();
 
   // Setup event listeners
   document.querySelectorAll('.city-btn').forEach(btn => {
@@ -1906,6 +2148,7 @@ async function init() {
   injectModal();
   injectExpenseModal();
   injectDetailSheet();
+  injectPhraseModal();
 
   // Smart scroll-hide header
   initScrollHeader();
