@@ -966,17 +966,40 @@ function renderPhrasesPage() {
 
 // ── Phrase Audio (Web Speech API) ─────────────────────────────────────────────
 function speakJapanese(text, btn) {
-  if (!text || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
+  if (!text) return;
+  if (!window.speechSynthesis) {
+    showToast('🔇 La synthèse vocale n\'est pas supportée sur ce navigateur');
+    return;
+  }
+  const synth = window.speechSynthesis;
+  synth.cancel();
+
   const utt = new SpeechSynthesisUtterance(text);
   utt.lang = 'ja-JP';
   utt.rate = 0.85;
-  if (btn) {
-    btn.textContent = '🔈';
-    btn.disabled = true;
-    utt.onend = utt.onerror = () => { btn.textContent = '🔊'; btn.disabled = false; };
+  utt.pitch = 1;
+
+  const reset = () => { if (btn) { btn.textContent = '🔊'; btn.disabled = false; } };
+  utt.onend = reset;
+  utt.onerror = (e) => { reset(); if (e.error !== 'interrupted') showToast('🔇 Voix japonaise non disponible sur cet appareil'); };
+
+  if (btn) { btn.textContent = '🔈'; btn.disabled = true; }
+
+  const doSpeak = () => {
+    const voices = synth.getVoices();
+    const jaVoice = voices.find(v => v.lang === 'ja-JP') || voices.find(v => v.lang.startsWith('ja'));
+    if (jaVoice) utt.voice = jaVoice;
+    synth.speak(utt);
+  };
+
+  // iOS Safari loads voices asynchronously – wait for them if not yet ready
+  if (synth.getVoices().length > 0) {
+    doSpeak();
+  } else {
+    synth.addEventListener('voiceschanged', doSpeak, { once: true });
+    // Fallback: speak anyway after 300 ms if event never fires (some browsers)
+    setTimeout(() => { if (btn?.disabled) doSpeak(); }, 300);
   }
-  window.speechSynthesis.speak(utt);
 }
 
 // ── Phrase Modal ───────────────────────────────────────────────────────────────
