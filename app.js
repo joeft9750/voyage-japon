@@ -7,391 +7,26 @@
 let firebaseApp = null;
 let db = null;
 let unsubscribe = null;
+let unsubscribeExpenses = null;
+let unsubscribePeople = null;
 
-// ── Category emoji map ────────────────────────────────────────────────────────
-const CAT_EMOJI = {
-  'transport':   '🚄',
-  'attraction':  '🎢',
-  'repas':       '🍜',
-  'shopping':    '🛍️',
-  'visite':      '🏛️',
-  'hébergement': '🏨',
-  'activité':    '🎭',
-  'off':         '😴',
-  'photo':       '📸',
-  'parc':        '🎡',
-};
+// ── Données statiques (itinéraire, phrases, voyageurs) ──────────────────────────
+import { CAT_EMOJI, DAY_TYPE_CONFIG, TRIP, ALL_DAYS, SEED_ACTIVITIES, CATEGORIES, CITY_CAL_COLORS, PEOPLE, PHRASES } from './data.js';
 
-// ── Day type config ───────────────────────────────────────────────────────────
-const DAY_TYPE_CONFIG = {
-  arrival:   { label: 'Arrivée',               color: '#1565C0', bg: '#E3F2FD' },
-  departure: { label: 'Départ',                color: '#6A1B9A', bg: '#F3E5F5' },
-  highlight: { label: '⭐ Activité Principale', color: '#E65100', bg: '#FFF3E0' },
-  off:       { label: '😴 Jour OFF',           color: '#424242', bg: '#F5F5F5' },
-  travel:    { label: '🚄 Trajet',             color: '#00695C', bg: '#E0F2F1' },
-  free:      { label: '📅 Libre',             color: '#558B2F', bg: '#F1F8E9' },
-  normal:    { label: null,                    color: null,      bg: null      },
-};
-
-// ── Trip Data ─────────────────────────────────────────────────────────────────
-const TRIP = {
-  tokyo1: {
-    label: 'Tokyo I',
-    emoji: '🗼',
-    dates: '10–17 Juillet',
-    days: [
-      {
-        id: 'tok1-10',
-        date: '2026-07-10',
-        label: 'Vendredi 10 juillet',
-        city: 'tokyo1',
-        type: 'arrival',
-        notes: 'Arrivée à Tokyo ! Atterrissage, récupération des bagages, transport vers l\'hôtel. Premier contact avec le Japon – jetlag à prévoir.',
-        activities: [
-          { id: 'a001', name: 'Vol & Arrivée Tokyo', priceEur: 0, priceJpy: 0, category: 'transport', isPaid: true, note: 'Jour 0 – Installation' },
-        ],
-      },
-      {
-        id: 'tok1-11',
-        date: '2026-07-11',
-        label: 'Samedi 11 juillet',
-        city: 'tokyo1',
-        type: 'normal',
-        notes: 'Découverte du quartier, check-in à l\'hôtel en après-midi. Premier konbini !\nSnacks 7-Eleven et exploration de Tokyo Solamachi le soir.',
-        activities: [
-          { id: 'a002', name: 'Check-in Hôtel', priceEur: 0, priceJpy: 0, category: 'hébergement', isPaid: false, note: '15h00' },
-          { id: 'a003', name: 'Tokyo Solamachi', priceEur: 0, priceJpy: 0, category: 'shopping', isPaid: false, note: '17h00 – Centre commercial au pied de la Skytree' },
-          { id: 'a004', name: 'Snacks 7-Eleven', priceEur: 5, priceJpy: 800, category: 'repas', isPaid: false, note: 'Onigiri, sando, matcha…' },
-        ],
-      },
-      {
-        id: 'tok1-12',
-        date: '2026-07-12',
-        label: 'Dimanche 12 juillet',
-        city: 'tokyo1',
-        type: 'normal',
-        notes: 'Journée chargée ! Pokémon Centre le matin (7min à pied), puis Tour de Tokyo, temple Zojo-ji et Shiba Park. Shopping chez Don Quijote le soir.',
-        activities: [
-          { id: 'a005', name: 'Pokémon Centre', priceEur: 0, priceJpy: 0, category: 'shopping', isPaid: false, note: '7 min à pied de l\'hôtel' },
-          { id: 'a006', name: 'Tour de Tokyo', priceEur: 12, priceJpy: 1800, category: 'attraction', isPaid: false, note: 'Vue panoramique sur la ville' },
-          { id: 'a007', name: 'Temple Zojo-ji', priceEur: 0, priceJpy: 0, category: 'visite', isPaid: false, note: 'Temple bouddhiste historique' },
-          { id: 'a008', name: 'Shiba Park & Maple Valley', priceEur: 0, priceJpy: 0, category: 'visite', isPaid: false, note: 'Parc pittoresque près de la tour' },
-          { id: 'a009', name: 'Don Quijote', priceEur: 0, priceJpy: 0, category: 'shopping', isPaid: false, note: 'Grand magasin discount – incontournable' },
-        ],
-      },
-      {
-        id: 'tok1-13',
-        date: '2026-07-13',
-        label: 'Lundi 13 juillet',
-        city: 'tokyo1',
-        type: 'highlight',
-        notes: 'DisneySea ! Départ tôt pour profiter de toute la journée. Fast pass inclus dans le billet. Repas dans le parc. 48€ + 7500¥ par personne.',
-        activities: [
-          { id: 'a010', name: 'DisneySea Tokyo', priceEur: 90, priceJpy: 12000, category: 'parc', isPaid: true, note: '90€/pers – Fast Pass inclus – PAYÉ' },
-          { id: 'a011', name: 'Repas dans le parc', priceEur: 20, priceJpy: 3000, category: 'repas', isPaid: false, note: 'Prévoir budget nourriture parc' },
-        ],
-      },
-      {
-        id: 'tok1-14',
-        date: '2026-07-14',
-        label: 'Mardi 14 juillet',
-        city: 'tokyo1',
-        type: 'normal',
-        notes: 'Asakusa & culture japonaise. Temple Sensoji, street food dans la rue Nakamise (~15€). Boutiques spécialisées : couteaux japonais, épées samouraï. Location de kimono l\'après-midi. Tokyo Skytree en fin de journée (450ème étage !).',
-        activities: [
-          { id: 'a012', name: 'Temple Sensoji', priceEur: 0, priceJpy: 0, category: 'visite', isPaid: false, note: 'Asakusa – temple bouddhiste le plus visité de Tokyo' },
-          { id: 'a013', name: 'Street Food Asakusa', priceEur: 15, priceJpy: 2000, category: 'repas', isPaid: false, note: 'Rue Nakamise – ningyo-yaki, ningyo…' },
-          { id: 'a014', name: 'Boutique Couteaux', priceEur: 0, priceJpy: 0, category: 'shopping', isPaid: false, note: 'Couteaux artisanaux japonais' },
-          { id: 'a015', name: 'Boutique Épées Samouraï', priceEur: 0, priceJpy: 0, category: 'shopping', isPaid: false, note: 'Répliques et authentiques' },
-          { id: 'a016', name: 'Location Kimono', priceEur: 26, priceJpy: 3500, category: 'activité', isPaid: false, note: '26€+ – habillage complet inclus' },
-          { id: 'a017', name: 'Tokyo Skytree', priceEur: 68, priceJpy: 9000, category: 'attraction', isPaid: false, note: '450ème étage – panorama à 450m – réserver à l\'avance' },
-        ],
-      },
-      {
-        id: 'tok1-15',
-        date: '2026-07-15',
-        label: 'Mercredi 15 juillet',
-        city: 'tokyo1',
-        type: 'highlight',
-        notes: 'Excursion journée au Mont Fuji ! Départ à 8h, ramener son repas. Vue sur le Fuji-san depuis les 5ème station. Paysages inoubliables.',
-        activities: [
-          { id: 'a018', name: 'Excursion Mont Fuji', priceEur: 50, priceJpy: 7000, category: 'activité', isPaid: false, note: '50€/pers – départ 8h – journée complète – ramener repas' },
-          { id: 'a019', name: 'Repas / Pique-nique', priceEur: 8, priceJpy: 1000, category: 'repas', isPaid: false, note: 'À préparer avant le départ' },
-        ],
-      },
-      {
-        id: 'tok1-16',
-        date: '2026-07-16',
-        label: 'Jeudi 16 juillet',
-        city: 'tokyo1',
-        type: 'off',
-        notes: 'Jour OFF bien mérité ! Repos le matin. Le soir, Taito Game Station à Akihabara pour les jeux d\'arcade rétro et modernes.',
-        activities: [
-          { id: 'a020', name: 'Repos / Journée libre', priceEur: 0, priceJpy: 0, category: 'off', isPaid: false, note: 'Récupération après le Fuji' },
-          { id: 'a021', name: 'Taito Game Station Akihabara', priceEur: 10, priceJpy: 1500, category: 'activité', isPaid: false, note: 'Le soir – arcade multi-niveaux' },
-          { id: 'a022', name: 'Ramen / Dîner Akihabara', priceEur: 10, priceJpy: 1200, category: 'repas', isPaid: false, note: 'Nombreux restaurants dans le quartier' },
-        ],
-      },
-      {
-        id: 'tok1-17',
-        date: '2026-07-17',
-        label: 'Vendredi 17 juillet',
-        city: 'tokyo1',
-        type: 'departure',
-        notes: 'Dernier jour à Tokyo avant Osaka ! Préparation des bagages, check-out hôtel. Trajet Tokyo → Osaka en Shinkansen ou bus.',
-        activities: [
-          { id: 'a023', name: 'Check-out Hôtel', priceEur: 0, priceJpy: 0, category: 'hébergement', isPaid: false, note: 'Avant 11h généralement' },
-          { id: 'a024', name: 'Trajet Tokyo → Osaka', priceEur: 0, priceJpy: 0, category: 'transport', isPaid: false, note: 'Shinkansen ~2h30 ou bus nuit' },
-        ],
-      },
-    ],
-  },
-
-  osaka: {
-    label: 'Osaka',
-    emoji: '🏯',
-    dates: '17–23 Juillet',
-    days: [
-      {
-        id: 'osa-17',
-        date: '2026-07-17',
-        label: 'Vendredi 17 juillet',
-        city: 'osaka',
-        type: 'arrival',
-        notes: 'Arrivée à Osaka ! Installation dans l\'hôtel, découverte du quartier. Première soirée dans la ville du street food.',
-        activities: [
-          { id: 'a025', name: 'Arrivée Osaka', priceEur: 0, priceJpy: 0, category: 'transport', isPaid: false, note: 'Depuis Tokyo' },
-          { id: 'a026', name: 'Check-in Hôtel Osaka', priceEur: 0, priceJpy: 0, category: 'hébergement', isPaid: false, note: 'Installation' },
-        ],
-      },
-      {
-        id: 'osa-18',
-        date: '2026-07-18',
-        label: 'Samedi 18 juillet',
-        city: 'osaka',
-        type: 'highlight',
-        notes: 'Universal Studios Japan ! Pass 2 jours (16300¥ = ~99€). Monde de Harry Potter, Super Nintendo World, Jurassic Park… Journée épique !',
-        activities: [
-          { id: 'a027', name: 'Universal Studios Japan', priceEur: 99, priceJpy: 16300, category: 'parc', isPaid: true, note: 'Pass 2 jours – 99€/16300¥ – PAYÉ' },
-          { id: 'a028', name: 'Repas USJ', priceEur: 25, priceJpy: 3500, category: 'repas', isPaid: false, note: 'Nourriture dans le parc' },
-        ],
-      },
-      {
-        id: 'osa-19',
-        date: '2026-07-19',
-        label: 'Dimanche 19 juillet',
-        city: 'osaka',
-        type: 'normal',
-        notes: 'Nara le matin pour voir les biches en liberté (bus 250¥). Aquarium Tempozan l\'après-midi. Legoland Discovery Center en option.',
-        activities: [
-          { id: 'a029', name: 'Nara – Biches en liberté', priceEur: 8, priceJpy: 730, category: 'visite', isPaid: false, note: '8€ entrée + bus 250¥ – biscuits pour biches en vente sur place' },
-          { id: 'a030', name: 'Aquarium Tempozan', priceEur: 15, priceJpy: 2400, category: 'attraction', isPaid: false, note: 'Un des plus grands aquariums du Japon' },
-          { id: 'a031', name: 'Legoland Discovery Center', priceEur: 12, priceJpy: 1800, category: 'attraction', isPaid: false, note: 'Optionnel – près de l\'aquarium' },
-          { id: 'a032', name: 'Repas Nara / Osaka', priceEur: 12, priceJpy: 1600, category: 'repas', isPaid: false, note: 'Restauration sur place' },
-        ],
-      },
-      {
-        id: 'osa-20',
-        date: '2026-07-20',
-        label: 'Lundi 20 juillet',
-        city: 'osaka',
-        type: 'normal',
-        notes: 'Journée shopping et street food ! Shinsaibashi rue commerçante, Dotonbori (bruits, néons, street food ~20€). Koromunishiba market, Pokémon Centre Daimaru, America Mura pour les friperies.',
-        activities: [
-          { id: 'a033', name: 'Shinsaibashi', priceEur: 0, priceJpy: 0, category: 'shopping', isPaid: false, note: 'Grande rue commerçante couverte' },
-          { id: 'a034', name: 'Dotonbori Street Food', priceEur: 20, priceJpy: 2800, category: 'repas', isPaid: false, note: 'Takoyaki, okonomiyaki, glaces mochi…' },
-          { id: 'a035', name: 'Koromunishiba Market', priceEur: 0, priceJpy: 0, category: 'shopping', isPaid: false, note: 'Marché tendance' },
-          { id: 'a036', name: 'Pokémon Centre Daimaru', priceEur: 0, priceJpy: 0, category: 'shopping', isPaid: false, note: 'Dans le grand magasin Daimaru' },
-          { id: 'a037', name: 'America Mura – Friperies', priceEur: 0, priceJpy: 0, category: 'shopping', isPaid: false, note: 'Quartier vintage et streetwear' },
-        ],
-      },
-      {
-        id: 'osa-21',
-        date: '2026-07-21',
-        label: 'Mardi 21 juillet',
-        city: 'osaka',
-        type: 'highlight',
-        notes: 'Direction Kyoto ! Fushimi Inari Shrine (les fameux torii rouges), Higashiyama, Kiyomizu-dera (3€), forêt de bambous d\'Arashiyama, quartier Gion geishas.',
-        activities: [
-          { id: 'a038', name: 'Transport Osaka → Kyoto', priceEur: 5, priceJpy: 600, category: 'transport', isPaid: false, note: 'Train JR 15 min' },
-          { id: 'a039', name: 'Fushimi Inari Shrine', priceEur: 0, priceJpy: 0, category: 'visite', isPaid: false, note: '10 000 torii rouges – départ tôt recommandé' },
-          { id: 'a040', name: 'Higashiyama District', priceEur: 0, priceJpy: 0, category: 'visite', isPaid: false, note: 'Rues pavées historiques' },
-          { id: 'a041', name: 'Kiyomizu-dera', priceEur: 3, priceJpy: 400, category: 'visite', isPaid: false, note: 'Temple sur pilotis – vue panoramique' },
-          { id: 'a042', name: 'Arashiyama – Forêt Bamboo', priceEur: 0, priceJpy: 0, category: 'visite', isPaid: false, note: 'Bambouseraie impressionnante' },
-          { id: 'a043', name: 'Quartier Gion', priceEur: 0, priceJpy: 0, category: 'visite', isPaid: false, note: 'Quartier des geishas – maisons de thé' },
-          { id: 'a044', name: 'Repas Kyoto', priceEur: 15, priceJpy: 2000, category: 'repas', isPaid: false, note: 'Cuisine kaiseki ou ramen' },
-        ],
-      },
-      {
-        id: 'osa-22',
-        date: '2026-07-22',
-        label: 'Mercredi 22 juillet',
-        city: 'osaka',
-        type: 'off',
-        notes: 'Jour OFF et séance photo Oiran ! Habillage en oiran (courtisane de l\'époque Edo) avec maquillage traditionnel. Séance 2h. Moment unique et inoubliable.',
-        activities: [
-          { id: 'a045', name: 'Séance Photo Oiran', priceEur: 60, priceJpy: 8000, category: 'photo', isPaid: false, note: '2h – habillage, coiffure, maquillage traditionnel inclus' },
-          { id: 'a046', name: 'Journée libre Osaka', priceEur: 0, priceJpy: 0, category: 'off', isPaid: false, note: 'Repos / Shopping libre' },
-        ],
-      },
-      {
-        id: 'osa-23',
-        date: '2026-07-23',
-        label: 'Jeudi 23 juillet',
-        city: 'osaka',
-        type: 'departure',
-        notes: 'Dernière matinée à Osaka. Retour à Tokyo en Shinkansen pour la deuxième partie du voyage !',
-        activities: [
-          { id: 'a047', name: 'Check-out Hôtel Osaka', priceEur: 0, priceJpy: 0, category: 'hébergement', isPaid: false, note: 'Avant 11h' },
-          { id: 'a048', name: 'Retour Tokyo (Shinkansen)', priceEur: 0, priceJpy: 0, category: 'transport', isPaid: false, note: '~2h30 – spectaculaire le long du Fuji' },
-        ],
-      },
-    ],
-  },
-
-  tokyo2: {
-    label: 'Tokyo II',
-    emoji: '🗼',
-    dates: '23–30 Juillet',
-    days: [
-      {
-        id: 'tok2-23',
-        date: '2026-07-23',
-        label: 'Jeudi 23 juillet',
-        city: 'tokyo2',
-        type: 'arrival',
-        notes: 'Retour à Tokyo pour la deuxième partie ! Check-in hôtel, repos après le voyage. La ville sous un nouvel œil.',
-        activities: [
-          { id: 'a049', name: 'Arrivée Tokyo (retour)', priceEur: 0, priceJpy: 0, category: 'transport', isPaid: false, note: 'Depuis Osaka' },
-          { id: 'a050', name: 'Check-in Hôtel Tokyo 2', priceEur: 0, priceJpy: 0, category: 'hébergement', isPaid: false, note: 'Installation' },
-        ],
-      },
-      {
-        id: 'tok2-24',
-        date: '2026-07-24',
-        label: 'Vendredi 24 juillet',
-        city: 'tokyo2',
-        type: 'highlight',
-        notes: 'Journée culturelle pop et insolite ! Temple du Chat (Gotokuji), le Godzilla de Shinjuku, Chat 3D de Shinjuku. Takeshita Street à Harajuku (fashion bizarre et kawaii). Shibuya Sky de nuit pour une vue époustouflante.',
-        activities: [
-          { id: 'a051', name: 'Temple du Chat (Gotokuji)', priceEur: 0, priceJpy: 0, category: 'visite', isPaid: false, note: 'Temple avec des centaines de chats porte-bonheur Maneki-neko' },
-          { id: 'a052', name: 'Godzilla Shinjuku', priceEur: 0, priceJpy: 0, category: 'visite', isPaid: false, note: 'Statue Godzilla sur le toit du Toho Cinema' },
-          { id: 'a053', name: 'Chat 3D Géant Shinjuku', priceEur: 0, priceJpy: 0, category: 'visite', isPaid: false, note: 'Écran 3D géant avec chat holographique' },
-          { id: 'a054', name: 'Takeshita Street – Harajuku', priceEur: 10, priceJpy: 1500, category: 'shopping', isPaid: false, note: 'Mode alternative, crepe, fashion kawaii' },
-          { id: 'a055', name: 'Repas Harajuku', priceEur: 12, priceJpy: 1600, category: 'repas', isPaid: false, note: 'Crepes japonaises ou ramen' },
-          { id: 'a056', name: 'Shibuya Sky (de nuit)', priceEur: 18, priceJpy: 2500, category: 'attraction', isPaid: false, note: 'Toit de Shibuya Scramble Square – 230m' },
-        ],
-      },
-      {
-        id: 'tok2-25',
-        date: '2026-07-25',
-        label: 'Samedi 25 juillet',
-        city: 'tokyo2',
-        type: 'free',
-        notes: 'Journée libre à planifier ! Idées : Odaiba (quartier futuriste), Teamlab Borderless, Shinjuku Omoide Yokocho (ruelle de yakitori), Kabukicho, shopping Ginza.',
-        activities: [
-          { id: 'a057', name: 'Journée Libre – À planifier', priceEur: 0, priceJpy: 0, category: 'off', isPaid: false, note: 'Odaiba ? Teamlab ? Shinjuku ?' },
-        ],
-      },
-      {
-        id: 'tok2-26',
-        date: '2026-07-26',
-        label: 'Dimanche 26 juillet',
-        city: 'tokyo2',
-        type: 'free',
-        notes: 'Journée libre. Idées : Shibuya crossing, Meiji Jingu (forêt sacrée), Daikanyama (quartier bobo), Nakameguro (canal romantique), retour à Akihabara.',
-        activities: [
-          { id: 'a058', name: 'Journée Libre – À planifier', priceEur: 0, priceJpy: 0, category: 'off', isPaid: false, note: 'Meiji Jingu ? Nakameguro ?' },
-        ],
-      },
-      {
-        id: 'tok2-27',
-        date: '2026-07-27',
-        label: 'Lundi 27 juillet',
-        city: 'tokyo2',
-        type: 'free',
-        notes: 'Journée libre. Idées : Yanaka (vieux Tokyo préservé), Ueno (musées et parc), Ikebukuro (Sunshine City, Animate, Pokémon Café), onsen public.',
-        activities: [
-          { id: 'a059', name: 'Journée Libre – À planifier', priceEur: 0, priceJpy: 0, category: 'off', isPaid: false, note: 'Ikebukuro ? Yanaka ? Ueno ?' },
-        ],
-      },
-      {
-        id: 'tok2-28',
-        date: '2026-07-28',
-        label: 'Mardi 28 juillet',
-        city: 'tokyo2',
-        type: 'free',
-        notes: 'Journée libre. Idées : Koishikawa Korakuen (jardin japonais), Tokyo Dome City, Shimokitazawa (musique live, vintage), Kapabashi (rue des ustensiles de cuisine).',
-        activities: [
-          { id: 'a060', name: 'Journée Libre – À planifier', priceEur: 0, priceJpy: 0, category: 'off', isPaid: false, note: 'Shimokitazawa ? Jardins ? Onsen ?' },
-        ],
-      },
-      {
-        id: 'tok2-29',
-        date: '2026-07-29',
-        label: 'Mercredi 29 juillet',
-        city: 'tokyo2',
-        type: 'free',
-        notes: 'Avant-dernière journée ! Emplettes de cadeaux souvenirs, dernière visite. Dîner de clôture dans un restaurant spécial.',
-        activities: [
-          { id: 'a061', name: 'Shopping Souvenirs / Dernières Emplettes', priceEur: 50, priceJpy: 7000, category: 'shopping', isPaid: false, note: 'Thé, mochi, tenugui, gadgets…' },
-          { id: 'a062', name: 'Dîner de clôture', priceEur: 30, priceJpy: 4000, category: 'repas', isPaid: false, note: 'Restaurant yakiniku ou kaiseki' },
-        ],
-      },
-      {
-        id: 'tok2-30',
-        date: '2026-07-30',
-        label: 'Jeudi 30 juillet',
-        city: 'tokyo2',
-        type: 'departure',
-        notes: 'Dernier jour… Retour en France. Arigatou gozaimashita, Japon ! まだ来ます。',
-        activities: [
-          { id: 'a063', name: 'Check-out & Départ Aéroport', priceEur: 0, priceJpy: 0, category: 'transport', isPaid: false, note: 'Narita ou Haneda – prévoir 3h avant' },
-        ],
-      },
-    ],
-  },
-};
-
-// Build a flat list of all days across all cities in order
-const ALL_DAYS = [
-  ...TRIP.tokyo1.days,
-  ...TRIP.osaka.days,
-  ...TRIP.tokyo2.days,
-];
-
-// ── Build the SEED list of activities (full records) from the static TRIP ──────
-// Each activity is now a self-contained record carrying its dayId so it can be
-// created / deleted dynamically and synced for everyone via Firestore.
-const SEED_ACTIVITIES = [];
-ALL_DAYS.forEach(day => {
-  day.activities.forEach((act, i) => {
-    SEED_ACTIVITIES.push({
-      id: act.id,
-      dayId: day.id,
-      name: act.name,
-      priceEur: act.priceEur || 0,
-      priceJpy: act.priceJpy || 0,
-      category: act.category || 'visite',
-      isPaid: act.isPaid === true,
-      note: act.note || '',
-      checked: false,
-      custom: false,
-      order: i,
-    });
-  });
-});
-
-// Valid categories for the "add" form
-const CATEGORIES = ['transport', 'attraction', 'repas', 'shopping', 'visite', 'hébergement', 'activité', 'parc', 'photo', 'off'];
 
 // ── App State ─────────────────────────────────────────────────────────────────
 const state = {
   currentCity: 'tokyo1',
   currentDayIndex: 0,    // index within TRIP[currentCity].days
   activities: {},        // activityId → full activity record (single source of truth)
+  expenses: {},          // expenseId → personal expense record (synced)
+  peopleNames: {},       // personId → custom display name (synced)
   isOnline: false,
   isTipsPage: false,
+  isCalendarPage: false,
+  isPhrasesPage: false,
+  isBudgetPage: false,
+  selectedCalendarDayId: null, // which day is selected in the calendar view
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -399,8 +34,12 @@ function getAllDaysFlat() {
   return ALL_DAYS;
 }
 
+function isSpecialPage() {
+  return state.isTipsPage || state.isCalendarPage || state.isPhrasesPage || state.isBudgetPage;
+}
+
 function getCurrentDay() {
-  if (state.isTipsPage) return null;
+  if (isSpecialPage()) return null;
   const cityDays = TRIP[state.currentCity].days;
   return cityDays[state.currentDayIndex] || cityDays[0];
 }
@@ -473,6 +112,94 @@ function saveToLocalStorage() {
     localStorage.setItem('japon2026_activities_v2', JSON.stringify(state.activities));
   } catch (e) {
     console.warn('LocalStorage write error:', e);
+  }
+}
+
+// Expenses (personal budget) – separate storage key
+function loadExpensesFromLocalStorage() {
+  try {
+    const raw = localStorage.getItem('japon2026_expenses_v1');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        state.expenses = parsed;
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('LocalStorage read error (expenses):', e);
+  }
+  state.expenses = {};
+}
+
+function saveExpensesToLocalStorage() {
+  try {
+    localStorage.setItem('japon2026_expenses_v1', JSON.stringify(state.expenses));
+  } catch (e) {
+    console.warn('LocalStorage write error (expenses):', e);
+  }
+}
+
+function expenseToRecord(exp) {
+  return {
+    person: exp.person,
+    label: exp.label || '',
+    amountEur: exp.amountEur || 0,
+    amountJpy: exp.amountJpy || 0,
+    createdAt: exp.createdAt ?? 0,
+  };
+}
+
+// People display names (editable + synced)
+function getPersonName(personId) {
+  const custom = state.peopleNames[personId];
+  if (custom && custom.trim()) return custom;
+  const def = PEOPLE.find(p => p.id === personId);
+  return def ? def.name : personId;
+}
+
+function loadPeopleFromLocalStorage() {
+  try {
+    const raw = localStorage.getItem('japon2026_people_v1');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') { state.peopleNames = parsed; return; }
+    }
+  } catch (e) {
+    console.warn('LocalStorage read error (people):', e);
+  }
+  state.peopleNames = {};
+}
+
+function savePeopleToLocalStorage() {
+  try {
+    localStorage.setItem('japon2026_people_v1', JSON.stringify(state.peopleNames));
+  } catch (e) {
+    console.warn('LocalStorage write error (people):', e);
+  }
+}
+
+async function renamePerson(personId) {
+  const current = getPersonName(personId);
+  const next = prompt('Nom de la personne :', current);
+  if (next === null) return;                 // cancelled
+  const name = next.trim();
+  if (!name || name === current) return;
+
+  state.peopleNames[personId] = name;
+  renderBudgetPage();
+  showToast('✏️ Nom modifié !');
+
+  if (db) {
+    try {
+      const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      await setDoc(doc(db, 'people', personId), { name });
+    } catch (e) {
+      console.error('Firestore write error (people):', e);
+      savePeopleToLocalStorage();
+    }
+  } else {
+    savePeopleToLocalStorage();
   }
 }
 
@@ -644,6 +371,7 @@ async function persistActivity(actId, act) {
 
 // Update just the progress bar on the left page (after a check toggle)
 function renderProgressOnly() {
+  if (state.isCalendarPage) { renderCalendarPage(); return; }
   if (state.isTipsPage) return;
   const day = getCurrentDay();
   if (day) renderLeftPage(day);
@@ -899,12 +627,413 @@ function renderTipsPage() {
   rightEl.innerHTML = rightHtml;
 }
 
+// ── Calendar Page Render ──────────────────────────────────────────────────────
+function renderCalendarPage() {
+  const leftEl  = document.getElementById('leftContent');
+  const rightEl = document.getElementById('rightContent');
+  if (!leftEl || !rightEl) return;
+
+  // date-string → [day, …] (handles Jul-17 / Jul-23 overlap days)
+  const dateMap = {};
+  ALL_DAYS.forEach(day => {
+    if (!dateMap[day.date]) dateMap[day.date] = [];
+    dateMap[day.date].push(day);
+  });
+
+  // July 1 2026 = Wednesday → offset 2 in a Mon-first week
+  const firstOffset = 2;
+  const daysInJuly  = 31;
+  const weekHeaders = ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'];
+
+  let calHtml = `
+    <div class="cal-title">
+      <span class="cal-title-jp">カレンダー</span>
+      Juillet 2026
+    </div>
+    <div class="cal-legend">
+      ${Object.entries(CITY_CAL_COLORS).map(([city, color]) =>
+        `<span class="cal-legend-dot" style="background:${color}"></span>${TRIP[city].emoji} ${TRIP[city].label}`
+      ).join('')}
+    </div>
+    <div class="cal-grid">
+      <div class="cal-week-headers">
+        ${weekHeaders.map(h => `<div class="cal-wh">${h}</div>`).join('')}
+      </div>
+      <div class="cal-days">
+  `;
+
+  for (let i = 0; i < firstOffset; i++) {
+    calHtml += `<div class="cal-cell empty"></div>`;
+  }
+
+  for (let d = 1; d <= daysInJuly; d++) {
+    const dateStr = `2026-07-${String(d).padStart(2, '0')}`;
+    const days    = dateMap[dateStr] || [];
+    const isTrip  = days.length > 0;
+    const isSelected = state.selectedCalendarDayId === dateStr;
+
+    let bgColor = '', fgColor = '', dotsHtml = '';
+    if (isTrip) {
+      const lastDay = days[days.length - 1];
+      bgColor = CITY_CAL_COLORS[lastDay.city];
+      fgColor = '#fff';
+      const allActs = days.flatMap(day => getDayActivities(day.id));
+      if (allActs.length) {
+        dotsHtml = `<div class="cal-dots">${
+          allActs.slice(0, 5).map(act =>
+            `<span class="cal-dot" style="background:${act.checked ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.38)'}"></span>`
+          ).join('')
+        }</div>`;
+      }
+    }
+
+    const cellClass = ['cal-cell', isTrip ? 'cal-cell--trip' : '', isSelected ? 'cal-cell--selected' : ''].filter(Boolean).join(' ');
+    const cellStyle = isTrip ? `style="background:${bgColor};color:${fgColor};"` : '';
+    const calDate  = isTrip ? `data-cal-date="${dateStr}"` : '';
+    const tipDays  = days.map(d => d.label).join(' + ');
+
+    calHtml += `
+      <div class="${cellClass}" ${calDate} ${cellStyle} role="${isTrip ? 'button' : ''}" tabindex="${isTrip ? '0' : '-1'}"${isTrip ? ` title="${tipDays}"` : ''}>
+        <span class="cal-day-num">${d}</span>
+        ${dotsHtml}
+      </div>`;
+  }
+
+  const totalCells = firstOffset + daysInJuly;
+  const remainder  = totalCells % 7;
+  if (remainder !== 0) {
+    for (let i = 0; i < 7 - remainder; i++) {
+      calHtml += `<div class="cal-cell empty"></div>`;
+    }
+  }
+  calHtml += `</div></div>`;
+  leftEl.innerHTML = calHtml;
+
+  // Right page
+  if (state.selectedCalendarDayId && dateMap[state.selectedCalendarDayId]) {
+    renderCalendarDayDetail(dateMap[state.selectedCalendarDayId], rightEl);
+  } else {
+    rightEl.innerHTML = `
+      <div class="cal-prompt">
+        <div class="cal-prompt-icon">📅</div>
+        <div class="cal-prompt-text">Cliquez sur un jour du calendrier pour voir ses activités</div>
+      </div>`;
+  }
+
+  // Click / keyboard listeners on trip day cells
+  document.querySelectorAll('.cal-cell[data-cal-date]').forEach(cell => {
+    const handler = () => {
+      state.selectedCalendarDayId = cell.dataset.calDate;
+      renderCalendarPage();
+    };
+    cell.addEventListener('click', handler);
+    cell.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(); }
+    });
+  });
+}
+
+function renderCalendarDayDetail(days, container) {
+  const allActs = days.flatMap(day => getDayActivities(day.id));
+  const mainDay  = days[days.length - 1];
+  const city     = TRIP[mainDay.city];
+  const typeConfig = DAY_TYPE_CONFIG[mainDay.type] || DAY_TYPE_CONFIG.normal;
+
+  let html = `
+    <div class="cal-detail-header">
+      <div class="cal-detail-date">${mainDay.label}${days.length > 1 ? '<span class="cal-detail-multi"> · 2 étapes</span>' : ''}</div>
+      <span class="city-badge">${city.emoji} ${city.label}</span>
+    </div>
+  `;
+  if (typeConfig.label) {
+    html += `<div class="day-type-banner day-type-${mainDay.type}" style="background:${typeConfig.bg};color:${typeConfig.color};">${typeConfig.label}</div>`;
+  }
+
+  if (allActs.length === 0) {
+    html += `<p class="no-activity">Aucune activité planifiée. Ajoutez-en une ci-dessous !</p>`;
+  } else {
+    html += `<ul class="activity-list">`;
+    allActs.forEach(act => {
+      const checked  = act.checked === true;
+      const priceStr = act.priceEur > 0
+        ? `<span class="act-price">${act.priceEur} €${act.priceJpy > 0 ? ' / ' + act.priceJpy.toLocaleString() + ' ¥' : ''}</span>`
+        : '';
+      const catEmoji = CAT_EMOJI[act.category] || '📌';
+      const catStr   = `<span class="act-cat">${catEmoji} ${escapeHtml(act.category)}</span>`;
+      const paidStr  = act.isPaid ? `<span class="act-paid-badge">✓ PAYÉ</span>` : '';
+      const noteStr  = act.note ? `<div class="act-note">${escapeHtml(act.note)}</div>` : '';
+      html += `
+        <li class="activity-item${checked ? ' done' : ''}" data-activity-item="${act.id}">
+          <div class="act-checkbox${checked ? ' checked' : ''}" data-act-id="${act.id}" role="checkbox" aria-checked="${checked}" tabindex="0" aria-label="Marquer : ${escapeHtml(act.name)}"></div>
+          <div class="act-body">
+            <div class="act-name">${escapeHtml(act.name)}</div>
+            <div class="act-meta">${priceStr}${catStr}${paidStr}</div>
+            ${noteStr}
+          </div>
+          <div class="act-actions">
+            <button class="act-edit-btn" data-edit-id="${act.id}" title="Modifier" aria-label="Modifier : ${escapeHtml(act.name)}">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            </button>
+            <button class="act-delete-btn" data-del-id="${act.id}" title="Supprimer" aria-label="Supprimer : ${escapeHtml(act.name)}">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+          </div>
+        </li>`;
+    });
+    html += `</ul>`;
+  }
+
+  html += `
+    <button class="add-activity-btn" data-add-day="${mainDay.id}">
+      <span class="add-icon">＋</span> Ajouter une activité
+    </button>`;
+  container.innerHTML = html;
+
+  container.querySelectorAll('.act-checkbox[data-act-id]').forEach(cb => {
+    const actId = cb.dataset.actId;
+    const handler = e => { e.preventDefault(); toggleActivity(actId, cb.classList.contains('checked')); };
+    cb.addEventListener('click', handler);
+    cb.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') handler(e); });
+  });
+  container.querySelectorAll('.act-edit-btn[data-edit-id]').forEach(btn => {
+    btn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); openEditModal(btn.dataset.editId); });
+  });
+  container.querySelectorAll('.act-delete-btn[data-del-id]').forEach(btn => {
+    btn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); deleteActivity(btn.dataset.delId); });
+  });
+  const addBtn = container.querySelector('.add-activity-btn[data-add-day]');
+  if (addBtn) addBtn.addEventListener('click', () => openAddModal(addBtn.dataset.addDay));
+}
+
+// ── Phrases Page Render ───────────────────────────────────────────────────────
+function renderPhraseSection(section) {
+  let html = `<div class="phrase-section">
+    <div class="phrase-section-title">${section.title}</div>
+    <ul class="phrase-list">`;
+  section.items.forEach(p => {
+    html += `
+      <li class="phrase-item">
+        <div class="phrase-fr">${escapeHtml(p.fr)}</div>
+        <div class="phrase-jp-row">
+          <span class="phrase-jp">${escapeHtml(p.jp)}</span>
+          <span class="phrase-ro">${escapeHtml(p.ro)}</span>
+        </div>
+      </li>`;
+  });
+  html += `</ul></div>`;
+  return html;
+}
+
+function renderPhrasesPage() {
+  const leftEl  = document.getElementById('leftContent');
+  const rightEl = document.getElementById('rightContent');
+  if (!leftEl || !rightEl) return;
+
+  // Split sections across the two pages
+  const half = Math.ceil(PHRASES.length / 2);
+  const leftSections  = PHRASES.slice(0, half);
+  const rightSections = PHRASES.slice(half);
+
+  let leftHtml = `
+    <div class="phrases-head">
+      <span class="phrases-head-jp">日本語フレーズ</span>
+      💬 Phrases Courantes
+      <div class="phrases-head-sub">À utiliser dans les commerces & au quotidien</div>
+    </div>
+  `;
+  leftSections.forEach(s => { leftHtml += renderPhraseSection(s); });
+
+  let rightHtml = `<div class="phrases-head-right">Au quotidien 🗣️</div>`;
+  rightSections.forEach(s => { rightHtml += renderPhraseSection(s); });
+
+  leftEl.innerHTML  = leftHtml;
+  rightEl.innerHTML = rightHtml;
+}
+
+// ── Personal Budget (expenses) ──────────────────────────────────────────────────
+async function addExpense(personId, data) {
+  const id = 'e_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+  const record = {
+    id,
+    person: personId,
+    label: data.label || '',
+    amountEur: Number(data.amountEur) || 0,
+    amountJpy: Number(data.amountJpy) || 0,
+    createdAt: Date.now(),
+  };
+  state.expenses[id] = record;
+  renderBudgetPage();
+  showToast('💰 Dépense ajoutée !');
+  await persistExpense(id, record);
+}
+
+async function deleteExpense(expId) {
+  const exp = state.expenses[expId];
+  if (!exp) return;
+  if (!confirm(`Supprimer cette dépense${exp.label ? ` « ${exp.label} »` : ''} ?`)) return;
+  delete state.expenses[expId];
+  renderBudgetPage();
+  showToast('🗑️ Dépense supprimée');
+
+  if (db) {
+    try {
+      const { doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      await deleteDoc(doc(db, 'expenses', expId));
+    } catch (e) {
+      console.error('Firestore delete error (expense):', e);
+      saveExpensesToLocalStorage();
+    }
+  } else {
+    saveExpensesToLocalStorage();
+  }
+}
+
+async function persistExpense(expId, exp) {
+  if (db) {
+    try {
+      const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      await setDoc(doc(db, 'expenses', expId), expenseToRecord(exp));
+    } catch (e) {
+      console.error('Firestore write error (expense):', e);
+      saveExpensesToLocalStorage();
+    }
+  } else {
+    saveExpensesToLocalStorage();
+  }
+}
+
+function getPersonExpenses(personId) {
+  return Object.values(state.expenses)
+    .filter(e => e && e.person === personId)
+    .sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0));
+}
+
+function renderBudgetPage() {
+  const leftEl  = document.getElementById('leftContent');
+  const rightEl = document.getElementById('rightContent');
+  if (!leftEl || !rightEl) return;
+
+  // Per-person totals
+  const totals = {};
+  let grandTotal = 0;
+  PEOPLE.forEach(p => {
+    const sum = getPersonExpenses(p.id).reduce((s, e) => s + (e.amountEur || 0), 0);
+    totals[p.id] = sum;
+    grandTotal += sum;
+  });
+  const avg = PEOPLE.length ? grandTotal / PEOPLE.length : 0;
+  const fmt = (n) => (Math.round(n * 100) / 100).toLocaleString('fr-FR') + ' €';
+
+  // ── Left page: summary ──
+  let leftHtml = `
+    <div class="budget-head">
+      <span class="budget-head-jp">個人予算</span>
+      💰 Budget Personnel
+      <div class="budget-head-sub">Dépenses individuelles du voyage</div>
+    </div>
+    <div class="budget-total-card">
+      <div class="budget-total-label">Total du groupe</div>
+      <div class="budget-total-val">${fmt(grandTotal)}</div>
+      <div class="budget-total-avg">Moyenne / pers. : ${fmt(avg)}</div>
+    </div>
+    <div class="budget-summary-list">
+  `;
+  PEOPLE.forEach(p => {
+    const pct = grandTotal > 0 ? Math.round((totals[p.id] / grandTotal) * 100) : 0;
+    leftHtml += `
+      <div class="budget-summary-row">
+        <div class="budget-summary-name"><span class="budget-pers-dot" style="background:${p.color}"></span>${p.emoji} ${escapeHtml(getPersonName(p.id))}</div>
+        <div class="budget-summary-bar"><div class="budget-summary-fill" style="width:${pct}%;background:${p.color}"></div></div>
+        <div class="budget-summary-amt">${fmt(totals[p.id])}</div>
+      </div>`;
+  });
+  leftHtml += `</div>`;
+  leftEl.innerHTML = leftHtml;
+
+  // ── Right page: a card per person with their expenses ──
+  let rightHtml = `<div class="budget-cards">`;
+  PEOPLE.forEach(p => {
+    const exps = getPersonExpenses(p.id);
+    rightHtml += `
+      <div class="budget-card" style="border-top:3px solid ${p.color}">
+        <div class="budget-card-head">
+          <span class="budget-card-name">
+            ${p.emoji} ${escapeHtml(getPersonName(p.id))}
+            <button class="budget-name-edit" data-rename="${p.id}" title="Modifier le nom" aria-label="Modifier le nom">✏️</button>
+          </span>
+          <span class="budget-card-total" style="color:${p.color}">${fmt(totals[p.id])}</span>
+        </div>
+        <ul class="budget-exp-list">`;
+    if (exps.length === 0) {
+      rightHtml += `<li class="budget-exp-empty">Aucune dépense</li>`;
+    } else {
+      exps.forEach(e => {
+        const jpy = e.amountJpy > 0 ? `<span class="budget-exp-jpy">${e.amountJpy.toLocaleString()} ¥</span>` : '';
+        rightHtml += `
+          <li class="budget-exp-item">
+            <span class="budget-exp-label">${escapeHtml(e.label || 'Dépense')}</span>
+            <span class="budget-exp-amt">${(e.amountEur || 0).toLocaleString('fr-FR')} €${jpy}</span>
+            <button class="budget-exp-del" data-del-exp="${e.id}" title="Supprimer" aria-label="Supprimer la dépense">✕</button>
+          </li>`;
+      });
+    }
+    rightHtml += `
+        </ul>
+        <button class="budget-add-btn" data-add-exp="${p.id}" style="color:${p.color};border-color:${p.color}">
+          ＋ Ajouter une dépense
+        </button>
+      </div>`;
+  });
+  rightHtml += `</div>`;
+  rightEl.innerHTML = rightHtml;
+
+  // Listeners
+  rightEl.querySelectorAll('.budget-add-btn[data-add-exp]').forEach(btn => {
+    btn.addEventListener('click', () => openExpenseModal(btn.dataset.addExp));
+  });
+  rightEl.querySelectorAll('.budget-exp-del[data-del-exp]').forEach(btn => {
+    btn.addEventListener('click', (e) => { e.preventDefault(); deleteExpense(btn.dataset.delExp); });
+  });
+  rightEl.querySelectorAll('.budget-name-edit[data-rename]').forEach(btn => {
+    btn.addEventListener('click', (e) => { e.preventDefault(); renamePerson(btn.dataset.rename); });
+  });
+}
+
 // ── Book Render ───────────────────────────────────────────────────────────────
 function renderBook() {
+  if (state.isCalendarPage) {
+    renderCalendarPage();
+    document.getElementById('navDay').textContent  = 'Calendrier';
+    document.getElementById('navPage').textContent = 'Juillet 2026';
+    document.getElementById('prevBtn').disabled = true;
+    document.getElementById('nextBtn').disabled = true;
+    return;
+  }
+
+  if (state.isPhrasesPage) {
+    renderPhrasesPage();
+    document.getElementById('navDay').textContent  = 'Phrases';
+    document.getElementById('navPage').textContent = 'Japonais utile';
+    document.getElementById('prevBtn').disabled = true;
+    document.getElementById('nextBtn').disabled = true;
+    return;
+  }
+
+  if (state.isBudgetPage) {
+    renderBudgetPage();
+    document.getElementById('navDay').textContent  = 'Budget';
+    document.getElementById('navPage').textContent = 'Dépenses perso';
+    document.getElementById('prevBtn').disabled = true;
+    document.getElementById('nextBtn').disabled = true;
+    return;
+  }
+
   if (state.isTipsPage) {
     renderTipsPage();
     document.getElementById('navDay').textContent  = 'Conseils';
     document.getElementById('navPage').textContent = 'Infos pratiques';
+    document.getElementById('prevBtn').disabled = true;
+    document.getElementById('nextBtn').disabled = true;
     return;
   }
 
@@ -951,6 +1080,8 @@ function animatePages(direction) {
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 function navigate(direction) {
+  // Calendar, phrases and budget pages have no prev/next navigation
+  if (state.isCalendarPage || state.isPhrasesPage || state.isBudgetPage) return;
   if (state.isTipsPage) {
     // From tips, go back to last day
     state.isTipsPage = false;
@@ -1000,7 +1131,7 @@ function navigate(direction) {
 }
 
 function updateNavButtons() {
-  if (state.isTipsPage) return;
+  if (isSpecialPage()) return;
   const prevBtn = document.getElementById('prevBtn');
   const nextBtn = document.getElementById('nextBtn');
   if (!prevBtn || !nextBtn) return;
@@ -1017,18 +1148,25 @@ function updateNavButtons() {
 }
 
 function setCity(cityId) {
-  if (cityId === 'tips') {
-    state.isTipsPage = true;
-    state.currentCity = 'tokyo1'; // reset for when we return
+  // Reset special page flags
+  state.isTipsPage     = false;
+  state.isCalendarPage = false;
+  state.isPhrasesPage  = false;
+  state.isBudgetPage   = false;
+
+  const SPECIAL = ['tips', 'calendar', 'phrases', 'budget'];
+
+  if (SPECIAL.includes(cityId)) {
+    if (cityId === 'tips')     state.isTipsPage     = true;
+    if (cityId === 'calendar') state.isCalendarPage = true;
+    if (cityId === 'phrases')  state.isPhrasesPage  = true;
+    if (cityId === 'budget')   state.isBudgetPage   = true;
     document.querySelectorAll('.city-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.city === 'tips');
+      btn.classList.toggle('active', btn.dataset.city === cityId);
     });
     animatePages('forward');
-    renderTipsPage();
-    document.getElementById('navDay').textContent  = 'Conseils';
-    document.getElementById('navPage').textContent = 'Infos pratiques';
+    renderBook();
   } else {
-    state.isTipsPage = false;
     state.currentCity = cityId;
     state.currentDayIndex = 0;
     document.querySelectorAll('.city-btn').forEach(btn => {
@@ -1051,6 +1189,11 @@ async function updateActivity(actId, data) {
   act.category = data.category || act.category;
   act.isPaid   = data.isPaid === true;
   act.note     = data.note || '';
+
+  // Handle date / day change
+  if (data.dayId && data.dayId !== act.dayId) {
+    act.dayId = data.dayId;
+  }
 
   renderBook();
   renderBudget();
@@ -1078,6 +1221,11 @@ function openEditModal(actId) {
   document.getElementById('addNote').value     = act.note || '';
   document.getElementById('addPaid').checked   = act.isPaid === true;
 
+  const daySelectWrap = document.getElementById('addDaySelectWrap');
+  const daySelect     = document.getElementById('addDaySelect');
+  if (daySelectWrap) daySelectWrap.style.display = '';
+  if (daySelect)     daySelect.value = act.dayId;
+
   modal.querySelector('.add-modal-title').textContent  = '✏️ Modifier l\'activité';
   modal.querySelector('.add-submit').textContent        = 'Sauvegarder';
 
@@ -1086,12 +1234,16 @@ function openEditModal(actId) {
   setTimeout(() => document.getElementById('addName')?.focus(), 50);
 }
 
-// ── Add-Activity Modal ──────────────────────────────────────────────────────────
+// ── Add-Activity Modal ────────────────────────────────────────────────────────────
 function injectModal() {
   if (document.getElementById('addModal')) return;
   const catOptions = CATEGORIES
     .map(c => `<option value="${c}">${CAT_EMOJI[c] || '📌'} ${c}</option>`)
     .join('');
+  const dayOptions = ALL_DAYS.map(day => {
+    const cityLabel = TRIP[day.city].label;
+    return `<option value="${day.id}">${day.label} – ${cityLabel}</option>`;
+  }).join('');
 
   const modal = document.createElement('div');
   modal.className = 'add-modal';
@@ -1126,6 +1278,11 @@ function injectModal() {
         <label class="add-checkbox-row">
           <input type="checkbox" id="addPaid" /> Déjà payé / réservé
         </label>
+        <div id="addDaySelectWrap" style="display:none;">
+          <label class="add-label">Déplacer vers le jour
+            <select id="addDaySelect" class="add-input">${dayOptions}</select>
+          </label>
+        </div>
         <div class="add-actions">
           <button type="button" class="add-cancel" data-close-modal>Annuler</button>
           <button type="submit" class="add-submit">Ajouter</button>
@@ -1161,6 +1318,8 @@ function injectModal() {
     };
 
     if (mode === 'edit') {
+      const newDayId = document.getElementById('addDaySelect')?.value;
+      if (newDayId) data.dayId = newDayId;
       updateActivity(document.getElementById('editActId').value, data);
     } else {
       addActivity(document.getElementById('addDayId').value, data);
@@ -1174,6 +1333,8 @@ function openAddModal(dayId) {
   if (!modal) return;
   document.getElementById('addForm').reset();
   document.getElementById('addDayId').value = dayId;
+  const daySelectWrap = document.getElementById('addDaySelectWrap');
+  if (daySelectWrap) daySelectWrap.style.display = 'none';
   modal.hidden = false;
   requestAnimationFrame(() => modal.classList.add('show'));
   setTimeout(() => document.getElementById('addName')?.focus(), 50);
@@ -1185,12 +1346,89 @@ function closeAddModal() {
   modal.classList.remove('show');
   setTimeout(() => {
     modal.hidden = true;
-    // Reset to "add" mode so the next open is always fresh
     const modeEl = document.getElementById('addMode');
     if (modeEl) modeEl.value = 'add';
+    const daySelectWrap = document.getElementById('addDaySelectWrap');
+    if (daySelectWrap) daySelectWrap.style.display = 'none';
     modal.querySelector('.add-modal-title').textContent = '➕ Nouvelle activité';
     modal.querySelector('.add-submit').textContent       = 'Ajouter';
   }, 200);
+}
+
+// ── Expense Modal ──────────────────────────────────────────────────────────────────
+function injectExpenseModal() {
+  if (document.getElementById('expModal')) return;
+
+  const modal = document.createElement('div');
+  modal.className = 'add-modal';
+  modal.id = 'expModal';
+  modal.hidden = true;
+  modal.innerHTML = `
+    <div class="add-modal-backdrop" data-close-exp></div>
+    <div class="add-modal-box" role="dialog" aria-modal="true" aria-label="Ajouter une dépense">
+      <button class="add-modal-close" data-close-exp aria-label="Fermer">✕</button>
+      <h3 class="add-modal-title">💰 Nouvelle dépense</h3>
+      <p class="exp-person-line" id="expPersonLine"></p>
+      <form id="expForm" class="add-form" novalidate>
+        <input type="hidden" id="expPersonId" />
+        <label class="add-label">Description *
+          <input type="text" id="expLabel" class="add-input" required maxlength="80" placeholder="Ex : Souvenirs, ramen, train…" />
+        </label>
+        <div class="add-row">
+          <label class="add-label">Montant (€)
+            <input type="number" id="expAmtEur" class="add-input" min="0" step="0.5" placeholder="0" />
+          </label>
+          <label class="add-label">Montant (¥)
+            <input type="number" id="expAmtJpy" class="add-input" min="0" step="100" placeholder="0" />
+          </label>
+        </div>
+        <div class="add-actions">
+          <button type="button" class="add-cancel" data-close-exp>Annuler</button>
+          <button type="submit" class="add-submit">Ajouter</button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  modal.querySelectorAll('[data-close-exp]').forEach(el => {
+    el.addEventListener('click', closeExpenseModal);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.hidden) closeExpenseModal();
+  });
+
+  modal.querySelector('#expForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const label = document.getElementById('expLabel').value.trim();
+    if (!label) { document.getElementById('expLabel').focus(); return; }
+    addExpense(document.getElementById('expPersonId').value, {
+      label,
+      amountEur: document.getElementById('expAmtEur').value,
+      amountJpy: document.getElementById('expAmtJpy').value,
+    });
+    closeExpenseModal();
+  });
+}
+
+function openExpenseModal(personId) {
+  const modal = document.getElementById('expModal');
+  if (!modal) return;
+  const person = PEOPLE.find(p => p.id === personId);
+  document.getElementById('expForm').reset();
+  document.getElementById('expPersonId').value = personId;
+  const line = document.getElementById('expPersonLine');
+  if (line && person) line.textContent = `Pour ${person.emoji} ${getPersonName(personId)}`;
+  modal.hidden = false;
+  requestAnimationFrame(() => modal.classList.add('show'));
+  setTimeout(() => document.getElementById('expLabel')?.focus(), 50);
+}
+
+function closeExpenseModal() {
+  const modal = document.getElementById('expModal');
+  if (!modal) return;
+  modal.classList.remove('show');
+  setTimeout(() => { modal.hidden = true; }, 200);
 }
 
 // ── Firebase Setup ────────────────────────────────────────────────────────────
@@ -1209,6 +1447,8 @@ async function setupFirebase(config) {
 
     // Subscribe to realtime updates
     subscribeToUpdates(db, collection, onSnapshot);
+    subscribeToExpenses(db, collection, onSnapshot);
+    subscribeToPeople(db, collection, onSnapshot);
 
     updateSyncStatus('online');
     showToast('🔥 Synchronisation Firebase active');
@@ -1254,11 +1494,7 @@ function subscribeToUpdates(db, collection, onSnapshot) {
 
       // Full re-render so added / deleted activities appear for everyone
       renderBudget();
-      if (state.isTipsPage) {
-        renderTipsPage();
-      } else {
-        renderBook();
-      }
+      renderBook();
     },
     (error) => {
       console.error('Firestore subscription error:', error);
@@ -1268,10 +1504,54 @@ function subscribeToUpdates(db, collection, onSnapshot) {
   );
 }
 
+function subscribeToExpenses(db, collection, onSnapshot) {
+  if (unsubscribeExpenses) unsubscribeExpenses();
+
+  unsubscribeExpenses = onSnapshot(
+    collection(db, 'expenses'),
+    (snap) => {
+      const fresh = {};
+      snap.forEach(docSnap => {
+        fresh[docSnap.id] = { id: docSnap.id, ...docSnap.data() };
+      });
+      state.expenses = fresh;
+      saveExpensesToLocalStorage();
+      // Re-render the budget page if it's showing
+      if (state.isBudgetPage) renderBudgetPage();
+    },
+    (error) => {
+      console.error('Firestore subscription error (expenses):', error);
+    }
+  );
+}
+
+function subscribeToPeople(db, collection, onSnapshot) {
+  if (unsubscribePeople) unsubscribePeople();
+
+  unsubscribePeople = onSnapshot(
+    collection(db, 'people'),
+    (snap) => {
+      const fresh = {};
+      snap.forEach(docSnap => {
+        const data = docSnap.data();
+        if (data && data.name) fresh[docSnap.id] = data.name;
+      });
+      state.peopleNames = fresh;
+      savePeopleToLocalStorage();
+      if (state.isBudgetPage) renderBudgetPage();
+    },
+    (error) => {
+      console.error('Firestore subscription error (people):', error);
+    }
+  );
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
   // Load local state first for instant UI
   loadFromLocalStorage();
+  loadExpensesFromLocalStorage();
+  loadPeopleFromLocalStorage();
 
   // Setup event listeners
   document.querySelectorAll('.city-btn').forEach(btn => {
@@ -1292,6 +1572,7 @@ async function init() {
 
   // Inject the add-activity modal
   injectModal();
+  injectExpenseModal();
 
   // Initial render
   renderBook();
@@ -1321,5 +1602,5 @@ async function init() {
   }
 }
 
-// ── Start ─────────────────────────────────────────────────────────────────────
+// ── Start ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', init);
