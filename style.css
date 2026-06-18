@@ -1509,6 +1509,24 @@ button { border: none; background: none; cursor: pointer; font-family: inherit; 
   font-size: 0.9rem;
   font-weight: 700;
   color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.budget-name-edit {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.72rem;
+  line-height: 1;
+  padding: 2px;
+  border-radius: 4px;
+  opacity: 0.55;
+  transition: opacity 0.15s, background 0.15s;
+}
+.budget-name-edit:hover {
+  opacity: 1;
+  background: rgba(0,0,0,0.07);
 }
 .budget-card-total {
   font-size: 0.95rem;
