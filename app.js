@@ -272,22 +272,24 @@ function updateSyncStatus(status) {
 function spawnSakura() {
   const container = document.getElementById('sakuraBg');
   if (!container) return;
-  const count = window.innerWidth < 600 ? 10 : 20;
+  const count = window.innerWidth < 600 ? 18 : 35;
   for (let i = 0; i < count; i++) {
     const petal = document.createElement('div');
     petal.className = 'sakura-petal';
     petal.style.left = Math.random() * 100 + 'vw';
     petal.style.top = '-20px';
-    const size = 6 + Math.random() * 8;
+    const size = 10 + Math.random() * 12;
     petal.style.width = size + 'px';
     petal.style.height = size + 'px';
-    const duration = 6 + Math.random() * 10;
-    const delay = Math.random() * 10;
+    const duration = 7 + Math.random() * 9;
+    const delay = Math.random() * 12;
     petal.style.animationDuration = duration + 's';
     petal.style.animationDelay = delay + 's';
-    const pink = Math.floor(180 + Math.random() * 60);
-    petal.style.background = `rgb(255, ${pink}, ${pink})`;
-    petal.style.opacity = (0.4 + Math.random() * 0.6).toString();
+    const pink = Math.floor(140 + Math.random() * 60);
+    petal.style.background = `rgb(255, ${pink}, ${Math.floor(pink * 0.85)})`;
+    petal.style.opacity = (0.65 + Math.random() * 0.35).toString();
+    const sway = ((Math.random() - 0.5) * 80).toFixed(0) + 'px';
+    petal.style.setProperty('--sway', sway);
     container.appendChild(petal);
   }
 }

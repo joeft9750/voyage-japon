@@ -75,25 +75,20 @@ button { border: none; background: none; cursor: pointer; font-family: inherit; 
 
 .sakura-petal {
   position: absolute;
-  width: 8px;
-  height: 8px;
   background: #FFB7C5;
   border-radius: 50% 0;
   transform: rotate(45deg);
   animation: sakuraFall linear infinite;
   pointer-events: none;
-  opacity: 0.8;
+  opacity: 0.9;
+  filter: drop-shadow(0 1px 2px rgba(220,80,120,0.25));
 }
 
 @keyframes sakuraFall {
-  0% {
-    transform: translateY(-20px) rotate(0deg);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(100vh) rotate(720deg);
-    opacity: 0;
-  }
+  0%   { transform: translateY(-20px)  translateX(0)              rotate(0deg);   opacity: 1; }
+  30%  { transform: translateY(30vh)   translateX(var(--sway))    rotate(270deg); }
+  60%  { transform: translateY(60vh)   translateX(calc(var(--sway) * -0.4)) rotate(480deg); }
+  100% { transform: translateY(105vh)  translateX(0)              rotate(720deg); opacity: 0; }
 }
 
 /* ═══════════════════════════════════════════════════════════════
