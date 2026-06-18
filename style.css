@@ -1664,7 +1664,7 @@ button { border: none; background: none; cursor: pointer; font-family: inherit; 
    DRAG & DROP – ACTIVITIES
    ═══════════════════════════════════════════════════════════════ */
 .activity-item[draggable="true"] { cursor: default; }
-.activity-item.dragging          { opacity: 0.35; cursor: grabbing; }
+.activity-item.dragging          { opacity: 0.35; cursor: grabbing; pointer-events: none; }
 .activity-item.drag-over {
   border: 2px dashed var(--gold);
   background: rgba(201,168,76,0.1);

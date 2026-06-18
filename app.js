@@ -1685,29 +1685,34 @@ function initActivityDragDrop(container) {
     actDragSrc = null;
   }
 
+  function getItemAtY(clientY) {
+    for (const item of container.querySelectorAll('.activity-item')) {
+      if (item === actDragSrc) continue;
+      const r = item.getBoundingClientRect();
+      if (clientY >= r.top && clientY <= r.bottom) return item;
+    }
+    return null;
+  }
+
   function onTouchMove(e) {
     if (!actDragSrc) return;
     e.preventDefault();
     const touch = e.touches[0];
-    const el = document.elementFromPoint(touch.clientX, touch.clientY);
-    const target = el?.closest?.('.activity-item');
+    const target = getItemAtY(touch.clientY);
     container.querySelectorAll('.activity-item').forEach(i => i.classList.remove('drag-over'));
-    if (target && target !== actDragSrc) target.classList.add('drag-over');
+    if (target) target.classList.add('drag-over');
   }
 
   function onTouchEnd(e) {
     if (!actDragSrc) return;
     const touch = e.changedTouches[0];
-    const el = document.elementFromPoint(touch.clientX, touch.clientY);
-    const target = el?.closest?.('.activity-item');
+    const target = getItemAtY(touch.clientY);
     const src = actDragSrc;
     clearDragState();
     document.removeEventListener('touchmove', onTouchMove);
     document.removeEventListener('touchend', onTouchEnd);
     document.removeEventListener('touchcancel', onTouchEnd);
-    if (target && target !== src) {
-      reorderActivities(src.dataset.activityItem, target.dataset.activityItem);
-    }
+    if (target) reorderActivities(src.dataset.activityItem, target.dataset.activityItem);
   }
 
   container.querySelectorAll('.activity-item[draggable]').forEach(item => {
@@ -1739,13 +1744,14 @@ function initActivityDragDrop(container) {
     const handle = item.querySelector('.drag-handle');
     if (handle) {
       handle.addEventListener('touchstart', e => {
+        e.preventDefault();
         e.stopPropagation();
         actDragSrc = item;
         item.classList.add('dragging');
         document.addEventListener('touchmove', onTouchMove, { passive: false });
         document.addEventListener('touchend', onTouchEnd);
         document.addEventListener('touchcancel', onTouchEnd);
-      }, { passive: true });
+      }, { passive: false });
     }
   });
 }
