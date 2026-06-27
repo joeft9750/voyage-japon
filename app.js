@@ -22,7 +22,6 @@ const state = {
   expenses: {},          // expenseId → personal expense record (synced)
   peopleNames: {},       // personId → custom display name (synced)
   phrases: {},           // phraseId → {id, section, fr, jp, ro}
-  dayPoints: {},         // dayId → { start, end } (lieux de départ / arrivée)
   isOnline: false,
   isTipsPage: false,
   isCalendarPage: false,
@@ -218,63 +217,6 @@ function savePeopleToLocalStorage() {
     localStorage.setItem('japon2026_people_v1', JSON.stringify(state.peopleNames));
   } catch (e) {
     console.warn('LocalStorage write error (people):', e);
-  }
-}
-
-// ── Day points (lieux de départ / arrivée par jour, synchronisés) ─────────────
-function loadDayPointsFromLocalStorage() {
-  try {
-    const raw = localStorage.getItem('japon2026_daypoints_v1');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object') { state.dayPoints = parsed; return; }
-    }
-  } catch (e) {
-    console.warn('LocalStorage read error (dayPoints):', e);
-  }
-  state.dayPoints = {};
-}
-
-function saveDayPointsToLocalStorage() {
-  try {
-    localStorage.setItem('japon2026_daypoints_v1', JSON.stringify(state.dayPoints));
-  } catch (e) {
-    console.warn('LocalStorage write error (dayPoints):', e);
-  }
-}
-
-function getDayPoints(dayId) {
-  const p = state.dayPoints[dayId] || {};
-  return { start: p.start || '', end: p.end || '' };
-}
-
-async function setDayPoints(dayId, start, end) {
-  const rec = { start: (start || '').trim(), end: (end || '').trim() };
-  if (!rec.start && !rec.end) {
-    delete state.dayPoints[dayId];
-  } else {
-    state.dayPoints[dayId] = rec;
-  }
-  renderBook();
-  showToast('🚩 Départ / arrivée enregistrés !');
-  await persistDayPoints(dayId, rec);
-}
-
-async function persistDayPoints(dayId, rec) {
-  if (db) {
-    try {
-      const { doc, setDoc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-      if (!rec.start && !rec.end) {
-        await deleteDoc(doc(db, 'dayPoints', dayId));
-      } else {
-        await setDoc(doc(db, 'dayPoints', dayId), rec);
-      }
-    } catch (e) {
-      console.error('Firestore write error (dayPoints):', e);
-      saveDayPointsToLocalStorage();
-    }
-  } else {
-    saveDayPointsToLocalStorage();
   }
 }
 
@@ -559,13 +501,9 @@ function mapsSearchUrl(act, cityKey) {
   return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(actMapQuery(act, cityKey));
 }
 
-// Itinéraire enchaînant départ → lieux du jour → arrivée en transports en commun
-function transitRouteUrl(acts, cityKey, startQ, endQ) {
-  const pts = [];
-  if (startQ && startQ.trim()) pts.push(startQ.trim());
-  acts.filter(isMappable).forEach(a => pts.push(actMapQuery(a, cityKey)));
-  if (endQ && endQ.trim()) pts.push(endQ.trim());
-
+// Itinéraire enchaînant tous les lieux du jour en transports en commun
+function transitRouteUrl(acts, cityKey) {
+  const pts = acts.filter(isMappable).map(a => actMapQuery(a, cityKey));
   if (pts.length === 0) return null;
   if (pts.length === 1) {
     return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(pts[0]);
@@ -583,33 +521,10 @@ function mapBtnHtml(act, cityKey) {
   return `<button class="act-map-btn" data-map-url="${escapeHtml(mapsSearchUrl(act, cityKey))}" title="Voir sur la carte" aria-label="Carte : ${escapeHtml(act.name)}">📍</button>`;
 }
 
-function dayRouteBtnHtml(acts, cityKey, dayId) {
-  const { start, end } = getDayPoints(dayId);
-  const url = transitRouteUrl(acts, cityKey, start, end);
+function dayRouteBtnHtml(acts, cityKey) {
+  const url = transitRouteUrl(acts, cityKey);
   if (!url) return '';
   return `<a class="day-route-btn" href="${escapeHtml(url)}" target="_blank" rel="noopener">🗺️ Itinéraire du jour en transports</a>`;
-}
-
-// Bandeau « Départ / Arrivée » du jour (au-dessus de la liste d'activités)
-function dayEndpointsHtml(dayId, cityKey) {
-  const { start, end } = getDayPoints(dayId);
-  const searchUrl = q => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(`${q}, ${cityMapName(cityKey)} Japon`);
-
-  const row = (icon, label, value) => {
-    if (!value) return '';
-    return `<div class="endpoint-row">
-      <span class="endpoint-ico">${icon}</span>
-      <span class="endpoint-label">${label}</span>
-      <button class="act-map-btn endpoint-map" data-map-url="${escapeHtml(searchUrl(value))}" title="Voir sur la carte">${escapeHtml(value)} 📍</button>
-    </div>`;
-  };
-
-  const hasAny = start || end;
-  return `<div class="day-endpoints">
-    ${row('🚩', 'Départ', start)}
-    ${row('🏁', 'Arrivée', end)}
-    <button class="endpoint-edit-btn" data-edit-points="${dayId}">${hasAny ? '✏️ Modifier départ / arrivée' : '🚩 Ajouter un lieu de départ / arrivée'}</button>
-  </div>`;
 }
 
 // Ouvre les boutons carte (📍) d'un conteneur dans un nouvel onglet
@@ -626,7 +541,6 @@ function wireMapButtons(container) {
 function renderRightPage(day) {
   const acts = getDayActivities(day.id);
   let html = `<div class="activities-header">Programme du jour</div>`;
-  html += dayEndpointsHtml(day.id, day.city);
 
   if (acts.length === 0) {
     html += `<p class="no-activity">Aucune activité planifiée. Ajoutez-en une ci-dessous !</p>`;
@@ -680,7 +594,7 @@ function renderRightPage(day) {
       `;
     });
     html += `</ul>`;
-    html += dayRouteBtnHtml(acts, day.city, day.id);
+    html += dayRouteBtnHtml(acts, day.city);
   }
 
   // "Add activity" button
@@ -740,11 +654,6 @@ function renderRightPage(day) {
 
   // Map (📍) listeners
   if (el) wireMapButtons(el);
-
-  // Départ / arrivée
-  if (el) el.querySelectorAll('.endpoint-edit-btn[data-edit-points]').forEach(btn => {
-    btn.addEventListener('click', () => openDayPointModal(btn.dataset.editPoints));
-  });
 
   // Drag & drop
   const rightContent = document.getElementById('rightContent');
@@ -968,8 +877,6 @@ function renderCalendarDayDetail(days, container) {
     html += `<div class="day-type-banner day-type-${mainDay.type}" style="background:${typeConfig.bg};color:${typeConfig.color};">${typeConfig.label}</div>`;
   }
 
-  html += dayEndpointsHtml(mainDay.id, mainDay.city);
-
   if (allActs.length === 0) {
     html += `<p class="no-activity">Aucune activité planifiée. Ajoutez-en une ci-dessous !</p>`;
   } else {
@@ -1007,7 +914,7 @@ function renderCalendarDayDetail(days, container) {
         </li>`;
     });
     html += `</ul>`;
-    html += dayRouteBtnHtml(allActs, mainDay.city, mainDay.id);
+    html += dayRouteBtnHtml(allActs, mainDay.city);
   }
 
   html += `
@@ -1035,9 +942,6 @@ function renderCalendarDayDetail(days, container) {
     body.addEventListener('click', e => { e.stopPropagation(); openDetailSheet(body.dataset.detailId); });
   });
   wireMapButtons(container);
-  container.querySelectorAll('.endpoint-edit-btn[data-edit-points]').forEach(btn => {
-    btn.addEventListener('click', () => openDayPointModal(btn.dataset.editPoints));
-  });
   initActivityDragDrop(container);
 }
 
@@ -1401,72 +1305,6 @@ function openPhraseModal(phraseId, defaultSection) {
 
 function closePhraseModal() {
   const modal = document.getElementById('phraseModal');
-  if (!modal) return;
-  modal.classList.remove('show');
-  setTimeout(() => { modal.hidden = true; }, 200);
-}
-
-// ── Modal Départ / Arrivée du jour ────────────────────────────────────────────
-function injectDayPointModal() {
-  if (document.getElementById('dayPointModal')) return;
-  const modal = document.createElement('div');
-  modal.className = 'add-modal';
-  modal.id = 'dayPointModal';
-  modal.hidden = true;
-  modal.innerHTML = `
-    <div class="add-modal-backdrop" data-close-dp></div>
-    <div class="add-modal-box" role="dialog" aria-modal="true" aria-label="Départ et arrivée du jour">
-      <button class="add-modal-close" data-close-dp aria-label="Fermer">✕</button>
-      <h3 class="add-modal-title">🚩 Départ & arrivée du jour</h3>
-      <p class="dp-day-line" id="dpDayLine"></p>
-      <form id="dpForm" class="add-form" novalidate>
-        <input type="hidden" id="dpDayId" />
-        <label class="add-label">🚩 Lieu de départ
-          <input type="text" id="dpStart" class="add-input" maxlength="160" placeholder="Ex : Hôtel Tokyo Bay, ou une adresse" />
-        </label>
-        <label class="add-label">🏁 Lieu d'arrivée
-          <input type="text" id="dpEnd" class="add-input" maxlength="160" placeholder="Ex : Hôtel, gare, restaurant du soir…" />
-        </label>
-        <span class="add-hint">Ces points encadrent l'itinéraire du jour : Google Maps calculera le trajet depuis le départ, en passant par les activités, jusqu'à l'arrivée.</span>
-        <div class="add-actions">
-          <button type="button" class="add-cancel" data-close-dp>Annuler</button>
-          <button type="submit" class="add-submit">Enregistrer</button>
-        </div>
-      </form>
-    </div>`;
-  document.body.appendChild(modal);
-
-  modal.querySelectorAll('[data-close-dp]').forEach(el => el.addEventListener('click', closeDayPointModal));
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modal.hidden) closeDayPointModal(); });
-
-  modal.querySelector('#dpForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    const dayId = document.getElementById('dpDayId').value;
-    const start = document.getElementById('dpStart').value;
-    const end   = document.getElementById('dpEnd').value;
-    await setDayPoints(dayId, start, end);
-    closeDayPointModal();
-  });
-}
-
-function openDayPointModal(dayId) {
-  const modal = document.getElementById('dayPointModal');
-  if (!modal) return;
-  const { start, end } = getDayPoints(dayId);
-  const day = ALL_DAYS.find(d => d.id === dayId);
-  document.getElementById('dpForm').reset();
-  document.getElementById('dpDayId').value = dayId;
-  document.getElementById('dpStart').value = start;
-  document.getElementById('dpEnd').value   = end;
-  const line = document.getElementById('dpDayLine');
-  if (line && day) line.textContent = day.label;
-  modal.hidden = false;
-  requestAnimationFrame(() => modal.classList.add('show'));
-  setTimeout(() => document.getElementById('dpStart')?.focus(), 50);
-}
-
-function closeDayPointModal() {
-  const modal = document.getElementById('dayPointModal');
   if (!modal) return;
   modal.classList.remove('show');
   setTimeout(() => { modal.hidden = true; }, 200);
@@ -2160,7 +1998,6 @@ async function setupFirebase(config) {
     subscribeToExpenses(db, collection, onSnapshot);
     subscribeToPeople(db, collection, onSnapshot);
     subscribeToPhrasesUpdates(db, collection, onSnapshot);
-    subscribeToDayPoints(db, collection, onSnapshot);
 
     updateSyncStatus('online');
     showToast('🔥 Synchronisation Firebase active');
@@ -2288,25 +2125,6 @@ function subscribeToPhrasesUpdates(db, collection, onSnapshot) {
     },
     (error) => {
       console.error('Firestore subscription error (phrases):', error);
-    }
-  );
-}
-
-function subscribeToDayPoints(db, collection, onSnapshot) {
-  onSnapshot(
-    collection(db, 'dayPoints'),
-    (snap) => {
-      const fresh = {};
-      snap.forEach(docSnap => {
-        const d = docSnap.data();
-        fresh[docSnap.id] = { start: d.start || '', end: d.end || '' };
-      });
-      state.dayPoints = fresh;
-      saveDayPointsToLocalStorage();
-      renderBook();
-    },
-    (error) => {
-      console.error('Firestore subscription error (dayPoints):', error);
     }
   );
 }
@@ -2599,7 +2417,6 @@ async function init() {
   loadExpensesFromLocalStorage();
   loadPeopleFromLocalStorage();
   loadPhrasesFromLocalStorage();
-  loadDayPointsFromLocalStorage();
 
   // Setup event listeners
   document.querySelectorAll('.city-btn').forEach(btn => {
@@ -2634,7 +2451,6 @@ async function init() {
   injectExpenseModal();
   injectDetailSheet();
   injectPhraseModal();
-  injectDayPointModal();
 
   // Smart scroll-hide header
   initScrollHeader();
