@@ -27,6 +27,7 @@ const state = {
   isCalendarPage: false,
   isPhrasesPage: false,
   isBudgetPage: false,
+  isMapPage: false,
   selectedCalendarDayId: null, // which day is selected in the calendar view
 };
 
@@ -36,7 +37,7 @@ function getAllDaysFlat() {
 }
 
 function isSpecialPage() {
-  return state.isTipsPage || state.isCalendarPage || state.isPhrasesPage || state.isBudgetPage;
+  return state.isTipsPage || state.isCalendarPage || state.isPhrasesPage || state.isBudgetPage || state.isMapPage;
 }
 
 function getCurrentDay() {
@@ -1035,6 +1036,152 @@ function renderPhrasesPage() {
   });
 }
 
+// ── Map Page Render (Carte & itinéraires) ─────────────────────────────────────
+function renderMapPage() {
+  const leftEl  = document.getElementById('leftContent');
+  const rightEl = document.getElementById('rightContent');
+  if (!leftEl || !rightEl) return;
+
+  // Une carte par jour ayant au moins un lieu cartographiable
+  const cards = [];
+  ALL_DAYS.forEach(day => {
+    const acts = getDayActivities(day.id).filter(isMappable);
+    if (acts.length === 0) return;
+    const city = TRIP[day.city];
+    let card = `<div class="map-day">
+      <div class="map-day-head">${city.emoji} <span>${escapeHtml(day.label)}</span></div>
+      <ul class="map-place-list">`;
+    acts.forEach(a => {
+      card += `<li><button class="map-place act-map-btn" data-map-url="${escapeHtml(mapsSearchUrl(a, day.city))}">
+        <span class="map-pin">📍</span><span class="map-place-name">${escapeHtml(a.name)}</span>
+        <span class="map-go">›</span></button></li>`;
+    });
+    card += `</ul>`;
+    card += dayRouteBtnHtml(acts, day.city);
+    card += `</div>`;
+    cards.push(card);
+  });
+
+  const tokyoUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('Tokyo, Japon');
+  const osakaUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('Osaka, Japon');
+
+  const half = Math.ceil(cards.length / 2);
+
+  let leftHtml = `
+    <div class="map-head">
+      <span class="map-head-jp">地図とルート</span>
+      🗺️ Carte & Itinéraires
+      <div class="map-head-sub">Touchez un lieu pour l'ouvrir dans Google Maps · « Itinéraire » donne la ligne de train à prendre</div>
+    </div>
+    <div class="map-quick">
+      <a class="map-quick-btn" href="${escapeHtml(tokyoUrl)}" target="_blank" rel="noopener">🗼 Tokyo sur la carte</a>
+      <a class="map-quick-btn" href="${escapeHtml(osakaUrl)}" target="_blank" rel="noopener">🏯 Osaka sur la carte</a>
+    </div>
+    <div id="mapCanvas" class="map-canvas"></div>
+    <div class="map-canvas-hint" id="mapCanvasHint">📍 Chargement des points sur la carte…</div>`;
+  leftHtml += cards.slice(0, half).join('');
+
+  let rightHtml = `<div class="map-head-right">Itinéraires par jour 🚆</div>`;
+  const rightCards = cards.slice(half).join('');
+  rightHtml += rightCards || `<p class="no-activity">Ajoutez des activités pour voir leurs itinéraires ici.</p>`;
+
+  leftEl.innerHTML  = leftHtml;
+  rightEl.innerHTML = rightHtml;
+
+  wireMapButtons(leftEl);
+  wireMapButtons(rightEl);
+
+  // Collecte des lieux uniques (dédupliqués par requête) pour la minimap
+  const seen = new Set();
+  const places = [];
+  ALL_DAYS.forEach(day => {
+    getDayActivities(day.id).filter(isMappable).forEach(a => {
+      const query = actMapQuery(a, day.city);
+      if (seen.has(query)) return;
+      seen.add(query);
+      places.push({ name: a.name, query, mapUrl: mapsSearchUrl(a, day.city) });
+    });
+  });
+  initMiniMap(places);
+}
+
+// ── Minimap interactive (Leaflet + OpenStreetMap) ─────────────────────────────
+let miniMapInstance = null;
+
+const GEO_CACHE_KEY = 'japon2026_geocache_v1';
+function loadGeoCache() {
+  try { return JSON.parse(localStorage.getItem(GEO_CACHE_KEY)) || {}; } catch { return {}; }
+}
+function saveGeoCache(c) {
+  try { localStorage.setItem(GEO_CACHE_KEY, JSON.stringify(c)); } catch {}
+}
+
+async function geocodeQuery(query) {
+  const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(query);
+  const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+  const data = await res.json();
+  if (data && data[0]) {
+    return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+  }
+  return null;
+}
+
+function initMiniMap(places) {
+  // Leaflet pas encore chargé → réessayer brièvement
+  if (!window.L) {
+    setTimeout(() => { if (state.isMapPage) initMiniMap(places); }, 400);
+    return;
+  }
+  const el = document.getElementById('mapCanvas');
+  if (!el) return;
+
+  // Détruire une éventuelle instance précédente
+  if (miniMapInstance) { try { miniMapInstance.remove(); } catch {} miniMapInstance = null; }
+
+  const map = L.map(el, { scrollWheelZoom: false }).setView([35.68, 139.76], 11); // Tokyo
+  miniMapInstance = map;
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap',
+  }).addTo(map);
+  setTimeout(() => { try { map.invalidateSize(); } catch {} }, 100);
+
+  const hint = document.getElementById('mapCanvasHint');
+  const cache = loadGeoCache();
+  const bounds = [];
+  let done = 0;
+
+  (async () => {
+    for (const p of places) {
+      if (!state.isMapPage || miniMapInstance !== map) return; // l'utilisateur a changé d'onglet
+      let g = cache[p.query];
+      if (g === undefined) {
+        try { g = await geocodeQuery(p.query); } catch { g = null; }
+        if (g) { cache[p.query] = g; saveGeoCache(cache); }
+        await new Promise(r => setTimeout(r, 1100)); // politesse Nominatim (1 req/s)
+      }
+      if (g) {
+        const marker = L.marker([g.lat, g.lon]).addTo(map);
+        marker.bindPopup(
+          `<b>${escapeHtml(p.name)}</b><br>` +
+          `<a href="${escapeHtml(p.mapUrl)}" target="_blank" rel="noopener">Ouvrir dans Google Maps ›</a>`
+        );
+        bounds.push([g.lat, g.lon]);
+        if (bounds.length >= 1) {
+          try { map.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 }); } catch {}
+        }
+      }
+      done++;
+      if (hint) {
+        hint.textContent = bounds.length
+          ? `📍 ${bounds.length} lieu(x) placé(s) — touchez un point pour ouvrir l'itinéraire`
+          : `📍 Localisation des lieux… (${done}/${places.length})`;
+      }
+    }
+    if (hint && bounds.length === 0) hint.textContent = '⚠️ Aucun lieu n\'a pu être localisé (vérifiez votre connexion).';
+  })();
+}
+
 // ── Phrase Audio (Web Speech API) ─────────────────────────────────────────────
 function speakJapanese(text, btn) {
   if (!text) return;
@@ -1383,6 +1530,15 @@ function renderBook() {
     return;
   }
 
+  if (state.isMapPage) {
+    renderMapPage();
+    document.getElementById('navDay').textContent  = 'Carte';
+    document.getElementById('navPage').textContent = 'Lieux & itinéraires';
+    document.getElementById('prevBtn').disabled = true;
+    document.getElementById('nextBtn').disabled = true;
+    return;
+  }
+
   if (state.isBudgetPage) {
     renderBudgetPage();
     document.getElementById('navDay').textContent  = 'Budget';
@@ -1445,7 +1601,7 @@ function animatePages(direction) {
 // ── Navigation ────────────────────────────────────────────────────────────────
 function navigate(direction) {
   // Calendar, phrases and budget pages have no prev/next navigation
-  if (state.isCalendarPage || state.isPhrasesPage || state.isBudgetPage) return;
+  if (state.isCalendarPage || state.isPhrasesPage || state.isBudgetPage || state.isMapPage) return;
   if (state.isTipsPage) {
     // From tips, go back to last day
     state.isTipsPage = false;
@@ -1517,15 +1673,17 @@ function setCity(cityId) {
   state.isCalendarPage = false;
   state.isPhrasesPage  = false;
   state.isBudgetPage   = false;
+  state.isMapPage      = false;
 
   const bookContainer = document.getElementById('bookContainer');
-  const SPECIAL = ['tips', 'calendar', 'phrases', 'budget'];
+  const SPECIAL = ['tips', 'calendar', 'phrases', 'budget', 'map'];
 
   if (SPECIAL.includes(cityId)) {
     if (cityId === 'tips')     state.isTipsPage     = true;
     if (cityId === 'calendar') state.isCalendarPage = true;
     if (cityId === 'phrases')  state.isPhrasesPage  = true;
     if (cityId === 'budget')   state.isBudgetPage   = true;
+    if (cityId === 'map')      state.isMapPage      = true;
     bookContainer?.classList.add('special-mode');
     document.querySelectorAll('.city-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.city === cityId);
@@ -2279,6 +2437,10 @@ async function init() {
     logo.addEventListener('click', () => setCity('calendar'));
     logo.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') setCity('calendar'); });
   }
+
+  // Bouton Carte du header
+  const headerMapBtn = document.getElementById('headerMapBtn');
+  if (headerMapBtn) headerMapBtn.addEventListener('click', () => setCity('map'));
 
   // Spawn sakura
   spawnSakura();

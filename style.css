@@ -2025,3 +2025,162 @@ button { border: none; background: none; cursor: pointer; font-family: inherit; 
   box-shadow: 0 5px 16px rgba(21,101,192,0.45);
 }
 .day-route-btn:active { transform: translateY(0); }
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE CARTE (onglet 🗺️)
+   ═══════════════════════════════════════════════════════════════ */
+.map-head {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1.25rem;
+  color: var(--red-dark);
+  text-align: center;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--gold);
+  margin-bottom: 12px;
+  line-height: 1.3;
+}
+.map-head-jp {
+  display: block;
+  font-size: 0.7rem;
+  font-family: 'Poppins', sans-serif;
+  color: var(--ink-light);
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+.map-head-sub {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.68rem;
+  color: var(--ink-light);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.map-head-right {
+  font-family: 'Caveat', cursive;
+  font-size: 1.6rem;
+  color: var(--ink);
+  border-bottom: 1px solid var(--cream-dark);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+.map-quick {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.map-quick-btn {
+  flex: 1;
+  text-align: center;
+  padding: 10px 8px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid var(--cream-dark);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink);
+  transition: background 0.15s, border-color 0.15s;
+}
+.map-quick-btn:hover { background: #fff; border-color: var(--gold); }
+
+.map-day {
+  background: rgba(255,255,255,0.6);
+  border: 1px solid var(--cream-dark);
+  border-radius: 12px;
+  padding: 12px 13px;
+  margin-bottom: 14px;
+}
+.map-day-head {
+  font-family: 'Caveat', cursive;
+  font-size: 1.25rem;
+  color: var(--red-dark);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.map-place-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 4px;
+}
+.map-place {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  background: #fff;
+  border: 1px solid var(--cream-dark);
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  font-family: 'Poppins', sans-serif;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.map-place:hover  { background: #fbf7ee; border-color: var(--gold); }
+.map-place:active { transform: scale(0.99); }
+.map-place .map-pin { font-size: 1rem; flex-shrink: 0; }
+.map-place .map-place-name {
+  flex: 1;
+  font-size: 0.85rem;
+  color: var(--ink);
+  line-height: 1.3;
+}
+.map-place .map-go {
+  flex-shrink: 0;
+  color: var(--gold);
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1;
+}
+/* Le bouton itinéraire du jour reprend le style .day-route-btn déjà défini */
+.map-day .day-route-btn { margin-top: 10px; margin-bottom: 0; }
+
+/* Minimap interactive (Leaflet) */
+.map-canvas {
+  width: 100%;
+  height: 300px;
+  border-radius: 12px;
+  border: 1px solid var(--cream-dark);
+  margin-bottom: 6px;
+  overflow: hidden;
+  background: #e8eef0;
+  z-index: 1;
+}
+.map-canvas-hint {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.72rem;
+  color: var(--ink-light);
+  text-align: center;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+/* Le conteneur Leaflet doit rester sous le header/nav */
+.leaflet-pane, .leaflet-top, .leaflet-bottom { z-index: 5 !important; }
+.leaflet-popup-content { font-family: 'Poppins', sans-serif; font-size: 0.82rem; }
+.leaflet-popup-content a { color: var(--red); font-weight: 600; }
+
+/* Bouton Carte dans le header */
+.header-map-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.35);
+  color: #fff;
+  padding: 7px 14px;
+  border-radius: 20px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+.header-map-btn:hover  { background: rgba(255,255,255,0.28); }
+.header-map-btn:active { transform: scale(0.96); }
+@media (max-width: 480px) {
+  .header-map-btn { padding: 6px 11px; font-size: 0.76rem; }
+}
