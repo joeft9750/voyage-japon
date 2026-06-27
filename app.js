@@ -98,6 +98,7 @@ function toRecord(act) {
     createdAt: act.createdAt ?? 0,
     priority: act.priority || 'medium',
     reminder: act.reminder || null,
+    location: act.location || '',
   };
 }
 
@@ -362,6 +363,7 @@ async function addActivity(dayId, data) {
     createdAt: Date.now(),
     priority: data.priority || 'medium',
     reminder: data.reminder || null,
+    location: data.location || '',
   };
 
   state.activities[id] = record;
@@ -476,6 +478,65 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+// ── Google Maps helpers (itinéraire + transports) ─────────────────────────────
+// Catégories considérées comme des « lieux » réels (carte pertinente)
+const MAPPABLE_CATS = new Set(['visite', 'attraction', 'parc', 'shopping', 'repas', 'photo', 'hébergement', 'activité']);
+
+function cityMapName(cityKey) {
+  return cityKey === 'osaka' ? 'Osaka' : 'Tokyo';
+}
+
+function isMappable(act) {
+  return !!((act.location && act.location.trim()) || MAPPABLE_CATS.has(act.category));
+}
+
+// Requête Maps : lieu précis si renseigné, sinon nom + ville pour lever l'ambiguïté
+function actMapQuery(act, cityKey) {
+  const loc = (act.location || '').trim();
+  return loc || `${act.name}, ${cityMapName(cityKey)} Japon`;
+}
+
+function mapsSearchUrl(act, cityKey) {
+  return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(actMapQuery(act, cityKey));
+}
+
+// Itinéraire enchaînant tous les lieux du jour en transports en commun
+function transitRouteUrl(acts, cityKey) {
+  const pts = acts.filter(isMappable).map(a => actMapQuery(a, cityKey));
+  if (pts.length === 0) return null;
+  if (pts.length === 1) {
+    return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(pts[0]);
+  }
+  const origin = encodeURIComponent(pts[0]);
+  const dest   = encodeURIComponent(pts[pts.length - 1]);
+  const mids   = pts.slice(1, -1).map(encodeURIComponent).join('%7C');
+  let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=transit`;
+  if (mids) url += `&waypoints=${mids}`;
+  return url;
+}
+
+function mapBtnHtml(act, cityKey) {
+  if (!isMappable(act)) return '';
+  return `<button class="act-map-btn" data-map-url="${escapeHtml(mapsSearchUrl(act, cityKey))}" title="Voir sur la carte" aria-label="Carte : ${escapeHtml(act.name)}">📍</button>`;
+}
+
+function dayRouteBtnHtml(acts, cityKey) {
+  const url = transitRouteUrl(acts, cityKey);
+  if (!url) return '';
+  return `<a class="day-route-btn" href="${escapeHtml(url)}" target="_blank" rel="noopener">🗺️ Itinéraire du jour en transports</a>`;
+}
+
+// Ouvre les boutons carte (📍) d'un conteneur dans un nouvel onglet
+function wireMapButtons(container) {
+  container.querySelectorAll('.act-map-btn[data-map-url]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      window.open(btn.dataset.mapUrl, '_blank', 'noopener');
+    });
+  });
+}
+
 function renderRightPage(day) {
   const acts = getDayActivities(day.id);
   let html = `<div class="activities-header">Programme du jour</div>`;
@@ -520,6 +581,7 @@ function renderRightPage(day) {
             ${noteStr}
           </div>
           <div class="act-actions">
+            ${mapBtnHtml(act, day.city)}
             <button class="act-edit-btn" data-edit-id="${act.id}" title="Modifier" aria-label="Modifier : ${escapeHtml(act.name)}">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
             </button>
@@ -531,6 +593,7 @@ function renderRightPage(day) {
       `;
     });
     html += `</ul>`;
+    html += dayRouteBtnHtml(acts, day.city);
   }
 
   // "Add activity" button
@@ -587,6 +650,9 @@ function renderRightPage(day) {
       openDetailSheet(body.dataset.detailId);
     });
   });
+
+  // Map (📍) listeners
+  if (el) wireMapButtons(el);
 
   // Drag & drop
   const rightContent = document.getElementById('rightContent');
@@ -836,6 +902,7 @@ function renderCalendarDayDetail(days, container) {
             ${noteStr}
           </div>
           <div class="act-actions">
+            ${mapBtnHtml(act, mainDay.city)}
             <button class="act-edit-btn" data-edit-id="${act.id}" title="Modifier" aria-label="Modifier : ${escapeHtml(act.name)}">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
             </button>
@@ -846,6 +913,7 @@ function renderCalendarDayDetail(days, container) {
         </li>`;
     });
     html += `</ul>`;
+    html += dayRouteBtnHtml(allActs, mainDay.city);
   }
 
   html += `
@@ -872,6 +940,7 @@ function renderCalendarDayDetail(days, container) {
   container.querySelectorAll('.act-body[data-detail-id]').forEach(body => {
     body.addEventListener('click', e => { e.stopPropagation(); openDetailSheet(body.dataset.detailId); });
   });
+  wireMapButtons(container);
   initActivityDragDrop(container);
 }
 
@@ -1489,6 +1558,7 @@ async function updateActivity(actId, data) {
   act.note     = data.note || '';
   act.priority = data.priority || act.priority || 'medium';
   act.reminder = data.reminder || null;
+  act.location = data.location || '';
 
   // Handle date / day change
   if (data.dayId && data.dayId !== act.dayId) {
@@ -1519,6 +1589,7 @@ function openEditModal(actId) {
   document.getElementById('addPriceJpy').value = act.priceJpy || '';
   document.getElementById('addCategory').value = act.category || 'visite';
   document.getElementById('addNote').value     = act.note || '';
+  if (document.getElementById('addLocation')) document.getElementById('addLocation').value = act.location || '';
   document.getElementById('addPaid').checked   = act.isPaid === true;
   if (document.getElementById('addPriority')) document.getElementById('addPriority').value = act.priority || 'medium';
   if (document.getElementById('addReminder')) document.getElementById('addReminder').value = act.reminder || '';
@@ -1577,6 +1648,9 @@ function injectModal() {
         <label class="add-label">Note (optionnel)
           <input type="text" id="addNote" class="add-input" maxlength="120" placeholder="Horaire, adresse, détail…" />
         </label>
+        <label class="add-label">📍 Lieu pour la carte (optionnel)
+          <input type="text" id="addLocation" class="add-input" maxlength="120" placeholder="Ex : Tokyo Skytree (ou laisser vide)" />
+        </label>
         <label class="add-label">Priorité
           <select id="addPriority" class="add-input">
             <option value="medium">🟡 Moyenne</option>
@@ -1629,6 +1703,7 @@ function injectModal() {
       isPaid: document.getElementById('addPaid').checked,
       priority: document.getElementById('addPriority')?.value || 'medium',
       reminder: document.getElementById('addReminder')?.value || null,
+      location: document.getElementById('addLocation')?.value.trim() || '',
     };
 
     if (mode === 'edit') {
