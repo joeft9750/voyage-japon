@@ -1,6 +1,6 @@
 {
-  "name": "Notre Voyage au Japon 2026",
-  "short_name": "Japon 2026",
+  "name": "MyTrip — Japon 2026",
+  "short_name": "MyTrip",
   "description": "Carnet de voyage – itinéraire, calendrier, phrases et budget pour le Japon 2026",
   "lang": "fr",
   "start_url": "./index.html",
