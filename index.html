@@ -6,6 +6,14 @@
   <meta name="description" content="Carnet de voyage Japon 2026 – Tokyo, Osaka, Kyoto" />
   <meta name="theme-color" content="#C62828" />
   <title>🗻 Notre Voyage au Japon 2026</title>
+
+  <!-- PWA / installation sur l'écran d'accueil -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Japon 2026" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Poppins:wght@300;400;600;700&family=Caveat:wght@400;600;700&display=swap" rel="stylesheet" />
@@ -152,6 +160,16 @@ export const IS_CONFIGURED = true;</pre>
   </div>
 
   <!-- ══════════════════════════════════════════
+       BANDEAU INSTALLATION PWA
+  ══════════════════════════════════════════ -->
+  <div class="install-banner" id="installBanner" hidden>
+    <span class="install-icon">🗻</span>
+    <div class="install-text" id="installText">Installer l'app sur votre téléphone</div>
+    <button class="install-btn" id="installBtn">Installer</button>
+    <button class="install-close" id="installClose" aria-label="Fermer">✕</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════
        TOAST
   ══════════════════════════════════════════ -->
   <div class="toast" id="toast" aria-live="polite"></div>
@@ -165,5 +183,65 @@ export const IS_CONFIGURED = true;</pre>
   </div>
 
   <script type="module" src="app.js"></script>
+
+  <!-- ══════════════════════════════════════════
+       PWA – Service Worker + bandeau d'installation
+  ══════════════════════════════════════════ -->
+  <script>
+    // 1. Enregistrement du Service Worker (non-bloquant : ne casse rien si échec)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch((e) => {
+          console.info('Service Worker non enregistré :', e);
+        });
+      });
+    }
+
+    // 2. Bandeau d'installation
+    (function () {
+      const banner = document.getElementById('installBanner');
+      const btn = document.getElementById('installBtn');
+      const txt = document.getElementById('installText');
+      const close = document.getElementById('installClose');
+      if (!banner) return;
+
+      const dismissed = () => localStorage.getItem('japon2026_install_dismissed') === '1';
+      const hide = () => { banner.hidden = true; };
+      const dismiss = () => { localStorage.setItem('japon2026_install_dismissed', '1'); hide(); };
+
+      // Déjà installé (mode standalone) → ne rien afficher
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+        || window.navigator.standalone === true;
+      if (isStandalone || dismissed()) return;
+
+      const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
+        && !window.MSStream;
+
+      close && close.addEventListener('click', dismiss);
+
+      if (isIOS) {
+        // iOS : pas d'install auto → on explique la manip
+        txt.innerHTML = "Pour installer : appuyez sur <b>Partager</b> ⬆️ puis <b>« Sur l'écran d'accueil »</b>";
+        btn.hidden = true;
+        setTimeout(() => { banner.hidden = false; }, 2500);
+      } else {
+        // Android / Chrome : install native via beforeinstallprompt
+        let deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+          e.preventDefault();
+          deferredPrompt = e;
+          banner.hidden = false;
+        });
+        btn && btn.addEventListener('click', async () => {
+          if (!deferredPrompt) { hide(); return; }
+          deferredPrompt.prompt();
+          await deferredPrompt.userChoice;
+          deferredPrompt = null;
+          dismiss();
+        });
+        window.addEventListener('appinstalled', dismiss);
+      }
+    })();
+  </script>
 </body>
 </html>
