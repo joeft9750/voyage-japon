@@ -1123,6 +1123,13 @@ button { border: none; background: none; cursor: pointer; font-family: inherit; 
 }
 .add-row { display: flex; gap: 12px; }
 .add-row .add-label { flex: 1; }
+.add-hint {
+  font-size: 0.68rem;
+  font-weight: 400;
+  color: var(--ink-light);
+  opacity: 0.75;
+  line-height: 1.35;
+}
 .add-input {
   font-family: 'Poppins', sans-serif;
   font-size: 0.9rem;

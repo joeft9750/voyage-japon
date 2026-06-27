@@ -1792,6 +1792,10 @@ function injectModal() {
         <label class="add-label">Nom de l'activité *
           <input type="text" id="addName" class="add-input" required maxlength="80" placeholder="Ex : Musée Ghibli" />
         </label>
+        <label class="add-label">📍 Adresse exacte (pour la carte)
+          <input type="text" id="addLocation" class="add-input" maxlength="160" placeholder="Ex : 1 Chome-1-2 Oshiage, Sumida City, Tokyo" />
+          <span class="add-hint">Adresse complète ou nom précis du lieu → place le point exact sur la carte. Laisse vide pour utiliser le nom de l'activité.</span>
+        </label>
         <div class="add-row">
           <label class="add-label">Prix (€)
             <input type="number" id="addPriceEur" class="add-input" min="0" step="0.5" placeholder="0" />
@@ -1804,10 +1808,7 @@ function injectModal() {
           <select id="addCategory" class="add-input">${catOptions}</select>
         </label>
         <label class="add-label">Note (optionnel)
-          <input type="text" id="addNote" class="add-input" maxlength="120" placeholder="Horaire, adresse, détail…" />
-        </label>
-        <label class="add-label">📍 Lieu pour la carte (optionnel)
-          <input type="text" id="addLocation" class="add-input" maxlength="120" placeholder="Ex : Tokyo Skytree (ou laisser vide)" />
+          <input type="text" id="addNote" class="add-input" maxlength="120" placeholder="Horaire, détail…" />
         </label>
         <label class="add-label">Priorité
           <select id="addPriority" class="add-input">
