@@ -6,7 +6,7 @@
 
 // ── Category emoji map ────────────────────────────────────────────────────────
 const CAT_EMOJI = {
-  'transport':   '🚄',
+  'transport':   '🚆',
   'attraction':  '🎢',
   'repas':       '🍜',
   'shopping':    '🛍️',
@@ -24,7 +24,7 @@ const DAY_TYPE_CONFIG = {
   departure: { label: 'Départ',                color: '#6A1B9A', bg: '#F3E5F5' },
   highlight: { label: '⭐ Activité Principale', color: '#E65100', bg: '#FFF3E0' },
   off:       { label: '😴 Jour OFF',           color: '#424242', bg: '#F5F5F5' },
-  travel:    { label: '🚄 Trajet',             color: '#00695C', bg: '#E0F2F1' },
+  travel:    { label: '🚆 Trajet',             color: '#00695C', bg: '#E0F2F1' },
   free:      { label: '📅 Libre',             color: '#558B2F', bg: '#F1F8E9' },
   normal:    { label: null,                    color: null,      bg: null      },
 };

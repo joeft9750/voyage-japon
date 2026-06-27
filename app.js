@@ -262,11 +262,11 @@ function updateSyncStatus(status) {
   if (!dot || !label) return;
   dot.className = 'sync-dot ' + status;
   const labels = {
-    online: 'Synchronisé',
-    offline: 'Hors-ligne',
-    connecting: 'Connexion…',
+    online: '☁️ Synchronisé',
+    offline: '☁️ Hors-ligne',
+    connecting: '☁️ Connexion…',
   };
-  label.textContent = labels[status] || 'Hors-ligne';
+  label.textContent = labels[status] || '☁️ Hors-ligne';
   state.isOnline = status === 'online';
 }
 
@@ -553,7 +553,7 @@ function renderRightPage(day) {
         : '';
       const catEmoji = CAT_EMOJI[act.category] || '📌';
       const catStr = `<span class="act-cat">${catEmoji} ${escapeHtml(act.category)}</span>`;
-      const paidStr = act.isPaid ? `<span class="act-paid-badge">✓ PAYÉ</span>` : '';
+      const paidStr = act.isPaid ? `<span class="act-paid-badge">✅ PAYÉ</span>` : '';
       const customStr = act.custom ? `<span class="act-custom-badge">ajouté</span>` : '';
       const noteStr = act.note ? `<div class="act-note">${escapeHtml(act.note)}</div>` : '';
 
@@ -888,7 +888,7 @@ function renderCalendarDayDetail(days, container) {
         : '';
       const catEmoji = CAT_EMOJI[act.category] || '📌';
       const catStr   = `<span class="act-cat">${catEmoji} ${escapeHtml(act.category)}</span>`;
-      const paidStr  = act.isPaid ? `<span class="act-paid-badge">✓ PAYÉ</span>` : '';
+      const paidStr  = act.isPaid ? `<span class="act-paid-badge">✅ PAYÉ</span>` : '';
       const noteStr  = act.note ? `<div class="act-note">${escapeHtml(act.note)}</div>` : '';
       const prioColorCal = { high: '#C62828', medium: '#C9A84C', low: '#4CAF50' }[act.priority || 'medium'];
       const remStrCal = act.reminder ? `<span class="act-reminder-badge">🔔 ${escapeHtml(act.reminder)}</span>` : '';
@@ -2375,7 +2375,7 @@ function openDetailSheet(actId) {
   if (act.priceJpy > 0) metaHtml += `<span class="detail-meta-item">💴 ${act.priceJpy.toLocaleString()} ¥</span>`;
   metaHtml += `<span class="detail-meta-item">${CAT_EMOJI[act.category] || '📌'} ${escapeHtml(act.category)}</span>`;
   metaHtml += `<span class="detail-meta-item priority-badge" style="background:${color}22;color:${color}">${PRIORITY_EMOJIS[prio]} Priorité ${PRIORITY_LABELS[prio]}</span>`;
-  if (act.isPaid) metaHtml += `<span class="detail-meta-item paid-badge">✓ PAYÉ</span>`;
+  if (act.isPaid) metaHtml += `<span class="detail-meta-item paid-badge">✅ PAYÉ</span>`;
   if (act.reminder) metaHtml += `<span class="detail-meta-item">🔔 ${escapeHtml(act.reminder)}</span>`;
 
   document.getElementById('detailMeta').innerHTML = metaHtml;
