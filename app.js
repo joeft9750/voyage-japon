@@ -28,6 +28,7 @@ const state = {
   isPhrasesPage: false,
   isBudgetPage: false,
   isMapPage: false,
+  isInfoPage: false,
   selectedCalendarDayId: null, // which day is selected in the calendar view
 };
 
@@ -37,7 +38,7 @@ function getAllDaysFlat() {
 }
 
 function isSpecialPage() {
-  return state.isTipsPage || state.isCalendarPage || state.isPhrasesPage || state.isBudgetPage || state.isMapPage;
+  return state.isTipsPage || state.isCalendarPage || state.isPhrasesPage || state.isBudgetPage || state.isMapPage || state.isInfoPage;
 }
 
 function getCurrentDay() {
@@ -1036,6 +1037,134 @@ function renderPhrasesPage() {
   });
 }
 
+// ── Info / Assurance Page Render ──────────────────────────────────────────────
+const INSURANCE_PHONE = '+33170391217';
+const INSURANCE_CHECKLIST = [
+  "Télécharger l'attestation d'assurance (PDF) — version anglaise si possible",
+  "Enregistrer le PDF hors-ligne (mon téléphone + celui de mon partenaire)",
+  "Enregistrer le numéro Chubb Assistance dans les contacts",
+  "Vérifier que vols + hôtels sont payés ≥ 50 % avec la carte Ultim",
+];
+
+function loadInsuranceChecks() {
+  try { return JSON.parse(localStorage.getItem('japon2026_insurance_check_v1')) || {}; }
+  catch { return {}; }
+}
+function saveInsuranceChecks(c) {
+  try { localStorage.setItem('japon2026_insurance_check_v1', JSON.stringify(c)); } catch {}
+}
+
+function renderInfoPage() {
+  const leftEl  = document.getElementById('leftContent');
+  const rightEl = document.getElementById('rightContent');
+  if (!leftEl || !rightEl) return;
+
+  const leftHtml = `
+    <div class="info-head">
+      🛡️ Assurance Voyage
+      <div class="info-head-sub">Carte Visa Ultim BoursoBank · Chubb</div>
+    </div>
+
+    <div class="info-emergency">
+      <div class="info-emergency-title">🆘 Urgence médicale / rapatriement</div>
+      <a class="info-call-btn" href="tel:${INSURANCE_PHONE}">📞 Appeler Chubb Assistance</a>
+      <div class="info-emergency-note">${INSURANCE_PHONE.replace('+33','+33 ')} · <b>Choix 1</b> · 24h/24, 365j/an</div>
+      <div class="info-emergency-warn">⚠️ Appeler Chubb <b>AVANT</b> d'engager les frais en cas d'hospitalisation, soins spécialisés ou rapatriement.</div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title">📇 Autres contacts</div>
+      <ul class="info-contact-list">
+        <li><a href="tel:${INSURANCE_PHONE}">📞 Service Clients</a> · Choix 2<br><a href="mailto:boursobank_assurance@chubb.com">boursobank_assurance@chubb.com</a></li>
+        <li><a href="tel:${INSURANCE_PHONE}">📞 Service Sinistres</a> · Choix 3</li>
+        <li>🌐 Déclarer un sinistre (non médical) : <a href="https://bour.so/assurances-voyages" target="_blank" rel="noopener">bour.so/assurances-voyages</a></li>
+        <li>📄 Attestation d'assurance : <a href="https://bour.so/assurances-voyages" target="_blank" rel="noopener">bour.so/assurances-voyages</a></li>
+      </ul>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title">📌 Règles à retenir</div>
+      <ul class="info-list">
+        <li><b>Médical / assistance :</b> acquis sans condition de paiement, carte juste valide. Mais appeler Chubb <b>avant</b> les frais (hospitalisation, rapatriement).</li>
+        <li><b>Assurances voyage</b> (annulation, bagages, retard, RC…) : valables si le voyage est payé à 100 % — ou au moins <b>50 % avec la carte Ultim</b>.</li>
+        <li><b>Personnes couvertes :</b> titulaire + partenaire de PACS sous le même toit.</li>
+        <li><b>Durée :</b> 90 j max (assistance) / 180 j max (assurances). Voyage de 20 j : ✅ OK.</li>
+        <li><b>Délai de déclaration :</b> immédiat pour le médical ; sous 30 jours pour le reste.</li>
+      </ul>
+    </div>
+  `;
+
+  const guarantees = [
+    ['Frais médicaux à l\'étranger', '155 000 €', 'Étranger uniquement ; appeler Chubb avant'],
+    ['Rapatriement d\'urgence', 'Frais réels', 'Décision médecins Chubb'],
+    ['Frais de secours primaires', '2 500 €', '—'],
+    ['Soins dentaires d\'urgence', '700 € (franchise 50 €)', 'Validation préalable Chubb'],
+    ['Annulation / modification', '5 000 € / an', 'Voyage payé ≥ 50 % avec la carte'],
+    ['Retard transport (> 4h)', '400 €', 'Départ de France ou dernier retour'],
+    ['Retard de bagage (> 4h)', '400 €', 'Achats de première nécessité'],
+    ['Perte / vol / dégât bagages', '800 €', '300 €/article · déclarer sous 24h'],
+    ['Décès / invalidité (transport public)', '310 000 €', 'Titre payé avec la carte'],
+    ['Décès / invalidité (véhicule)', '46 000 €', '—'],
+    ['Responsabilité civile étranger', '4,5 M€ corporel / 1,5 M€ matériel', 'Voyage payé avec la carte'],
+    ['Franchise véhicule de location', '50 000 €', '≤ 31 j · RC auto non couverte (LIA)'],
+  ];
+  let tableRows = guarantees.map(([g, p, c]) =>
+    `<tr><td class="ig-name">${escapeHtml(g)}</td><td class="ig-cap">${escapeHtml(p)}</td><td class="ig-cond">${escapeHtml(c)}</td></tr>`
+  ).join('');
+
+  const checks = loadInsuranceChecks();
+  const checklistHtml = INSURANCE_CHECKLIST.map((item, i) => {
+    const done = checks[i] === true;
+    return `<li class="info-check${done ? ' done' : ''}">
+      <span class="info-check-box${done ? ' checked' : ''}" data-insur-check="${i}" role="checkbox" aria-checked="${done}" tabindex="0">${done ? '✓' : ''}</span>
+      <span class="info-check-label">${escapeHtml(item)}</span>
+    </li>`;
+  }).join('');
+
+  const rightHtml = `
+    <div class="info-head-right">Garanties & checklist</div>
+
+    <div class="info-card">
+      <div class="info-card-title">🛡️ Garanties principales</div>
+      <table class="info-guarantees">
+        <thead><tr><th>Garantie</th><th>Plafond</th><th>Condition</th></tr></thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title">🚫 Exclusions importantes</div>
+      <ul class="info-list">
+        <li>Affections préexistantes (consultation/hospitalisation dans les 6 mois avant départ).</li>
+        <li>Sinistres liés à l'alcool, drogues, actes illégaux, sports pratiqués en pro.</li>
+        <li>Bagages : antiquités, instruments de musique, lentilles, équipement sportif en usage.</li>
+        <li>Pays exclus de l'assistance (non concernés ici) : Cuba, Iran, Syrie, Corée du Nord, Russie…</li>
+      </ul>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title">✅ Checklist avant départ</div>
+      <ul class="info-checklist">${checklistHtml}</ul>
+    </div>
+  `;
+
+  leftEl.innerHTML  = leftHtml;
+  rightEl.innerHTML = rightHtml;
+
+  // Checklist toggles (persistées en local)
+  rightEl.querySelectorAll('.info-check-box[data-insur-check]').forEach(box => {
+    const toggle = () => {
+      const idx = box.dataset.insurCheck;
+      const c = loadInsuranceChecks();
+      c[idx] = !(c[idx] === true);
+      saveInsuranceChecks(c);
+      renderInfoPage();
+    };
+    box.addEventListener('click', toggle);
+    box.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+  });
+}
+
 // ── Map Page Render (Carte & itinéraires) ─────────────────────────────────────
 function renderMapPage() {
   const leftEl  = document.getElementById('leftContent');
@@ -1539,6 +1668,15 @@ function renderBook() {
     return;
   }
 
+  if (state.isInfoPage) {
+    renderInfoPage();
+    document.getElementById('navDay').textContent  = 'Infos';
+    document.getElementById('navPage').textContent = 'Assurance & urgences';
+    document.getElementById('prevBtn').disabled = true;
+    document.getElementById('nextBtn').disabled = true;
+    return;
+  }
+
   if (state.isBudgetPage) {
     renderBudgetPage();
     document.getElementById('navDay').textContent  = 'Budget';
@@ -1601,7 +1739,7 @@ function animatePages(direction) {
 // ── Navigation ────────────────────────────────────────────────────────────────
 function navigate(direction) {
   // Calendar, phrases and budget pages have no prev/next navigation
-  if (state.isCalendarPage || state.isPhrasesPage || state.isBudgetPage || state.isMapPage) return;
+  if (state.isCalendarPage || state.isPhrasesPage || state.isBudgetPage || state.isMapPage || state.isInfoPage) return;
   if (state.isTipsPage) {
     // From tips, go back to last day
     state.isTipsPage = false;
@@ -1674,9 +1812,10 @@ function setCity(cityId) {
   state.isPhrasesPage  = false;
   state.isBudgetPage   = false;
   state.isMapPage      = false;
+  state.isInfoPage     = false;
 
   const bookContainer = document.getElementById('bookContainer');
-  const SPECIAL = ['tips', 'calendar', 'phrases', 'budget', 'map'];
+  const SPECIAL = ['tips', 'calendar', 'phrases', 'budget', 'map', 'info'];
 
   if (SPECIAL.includes(cityId)) {
     if (cityId === 'tips')     state.isTipsPage     = true;
@@ -1684,6 +1823,7 @@ function setCity(cityId) {
     if (cityId === 'phrases')  state.isPhrasesPage  = true;
     if (cityId === 'budget')   state.isBudgetPage   = true;
     if (cityId === 'map')      state.isMapPage      = true;
+    if (cityId === 'info')     state.isInfoPage     = true;
     bookContainer?.classList.add('special-mode');
     document.querySelectorAll('.city-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.city === cityId);
