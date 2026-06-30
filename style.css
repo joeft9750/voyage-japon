@@ -2381,3 +2381,11 @@ button { border: none; background: none; cursor: pointer; font-family: inherit; 
   text-decoration: line-through;
   opacity: 0.6;
 }
+
+/* Groupe de boutons d'action du header (Carte + Assurance) */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}

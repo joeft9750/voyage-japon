@@ -2583,6 +2583,10 @@ async function init() {
   const headerMapBtn = document.getElementById('headerMapBtn');
   if (headerMapBtn) headerMapBtn.addEventListener('click', () => setCity('map'));
 
+  // Bouton Assurance du header
+  const headerInfoBtn = document.getElementById('headerInfoBtn');
+  if (headerInfoBtn) headerInfoBtn.addEventListener('click', () => setCity('info'));
+
   // Spawn sakura
   spawnSakura();
 
