@@ -22,6 +22,7 @@ const state = {
   expenses: {},          // expenseId → personal expense record (synced)
   peopleNames: {},       // personId → custom display name (synced)
   phrases: {},           // phraseId → {id, section, fr, jp, ro}
+  insuranceDoc: null,    // { name, size, dataUrl, uploadedAt } – attestation partagée
   isOnline: false,
   isTipsPage: false,
   isCalendarPage: false,
@@ -1054,6 +1055,120 @@ function saveInsuranceChecks(c) {
   try { localStorage.setItem('japon2026_insurance_check_v1', JSON.stringify(c)); } catch {}
 }
 
+// ── Attestation d'assurance (PDF partagé) ─────────────────────────────────────
+const INSURANCE_DOC_MAX = 700 * 1024; // 700 Ko (limite Firestore ~1 Mo après base64)
+
+function loadInsuranceDocFromLocalStorage() {
+  try {
+    const raw = localStorage.getItem('japon2026_insurance_doc_v1');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.dataUrl) { state.insuranceDoc = parsed; return; }
+    }
+  } catch (e) { console.warn('LocalStorage read error (insuranceDoc):', e); }
+  state.insuranceDoc = null;
+}
+
+function saveInsuranceDocToLocalStorage() {
+  try {
+    if (state.insuranceDoc) localStorage.setItem('japon2026_insurance_doc_v1', JSON.stringify(state.insuranceDoc));
+    else localStorage.removeItem('japon2026_insurance_doc_v1');
+  } catch (e) { console.warn('LocalStorage write error (insuranceDoc):', e); }
+}
+
+async function persistInsuranceDoc(rec) {
+  if (db) {
+    try {
+      const { doc, setDoc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      if (rec) await setDoc(doc(db, 'documents', 'attestation'), rec);
+      else     await deleteDoc(doc(db, 'documents', 'attestation'));
+    } catch (e) {
+      console.error('Firestore write error (insuranceDoc):', e);
+      saveInsuranceDocToLocalStorage();
+    }
+  } else {
+    saveInsuranceDocToLocalStorage();
+  }
+}
+
+function handleInsuranceUpload(file) {
+  if (!file) return;
+  if (file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) {
+    showToast('⚠️ Merci de choisir un fichier PDF');
+    return;
+  }
+  if (file.size > INSURANCE_DOC_MAX) {
+    showToast(`⚠️ Fichier trop lourd (${Math.round(file.size / 1024)} Ko). Max 700 Ko — compressez le PDF.`);
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const rec = {
+      name: file.name || 'attestation.pdf',
+      size: file.size,
+      dataUrl: reader.result,
+      uploadedAt: Date.now(),
+    };
+    state.insuranceDoc = rec;
+    saveInsuranceDocToLocalStorage();
+    renderInfoPage();
+    showToast('📄 Attestation ajoutée et partagée !');
+    await persistInsuranceDoc(rec);
+  };
+  reader.onerror = () => showToast('⚠️ Erreur de lecture du fichier');
+  reader.readAsDataURL(file);
+}
+
+function downloadInsuranceDoc() {
+  const d = state.insuranceDoc;
+  if (!d || !d.dataUrl) return;
+  const a = document.createElement('a');
+  a.href = d.dataUrl;
+  a.download = d.name || 'attestation.pdf';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+async function removeInsuranceDoc() {
+  if (!confirm('Supprimer l\'attestation partagée ?')) return;
+  state.insuranceDoc = null;
+  saveInsuranceDocToLocalStorage();
+  renderInfoPage();
+  showToast('🗑️ Attestation supprimée');
+  await persistInsuranceDoc(null);
+}
+
+function insuranceDocCardHtml() {
+  const d = state.insuranceDoc;
+  if (d && d.dataUrl) {
+    const kb = Math.max(1, Math.round((d.size || 0) / 1024));
+    return `<div class="info-card info-doc-card">
+      <div class="info-card-title">📄 Attestation d'assurance</div>
+      <div class="info-doc-file">
+        <span class="info-doc-ico">📑</span>
+        <span class="info-doc-meta">
+          <span class="info-doc-name">${escapeHtml(d.name || 'attestation.pdf')}</span>
+          <span class="info-doc-sub">${kb} Ko · partagée avec le groupe</span>
+        </span>
+      </div>
+      <button class="info-doc-download" id="insurDownloadBtn">⬇️ Télécharger l'attestation</button>
+      <div class="info-doc-actions">
+        <label class="info-doc-link" for="insurReplaceInput">🔄 Remplacer</label>
+        <input type="file" id="insurReplaceInput" accept="application/pdf,.pdf" hidden />
+        <button class="info-doc-link danger" id="insurRemoveBtn">🗑️ Supprimer</button>
+      </div>
+    </div>`;
+  }
+  return `<div class="info-card info-doc-card">
+    <div class="info-card-title">📄 Attestation d'assurance</div>
+    <p class="info-doc-empty">Ajoutez le PDF de l'attestation : il sera <b>partagé avec tout le groupe</b> et téléchargeable hors-ligne en cas de problème.</p>
+    <label class="info-doc-download" for="insurUploadInput">⬆️ Ajouter l'attestation (PDF)</label>
+    <input type="file" id="insurUploadInput" accept="application/pdf,.pdf" hidden />
+    <p class="info-doc-hint">PDF · 700 Ko max. Pensez à la version anglaise si disponible.</p>
+  </div>`;
+}
+
 function renderInfoPage() {
   const leftEl  = document.getElementById('leftContent');
   const rightEl = document.getElementById('rightContent');
@@ -1071,6 +1186,8 @@ function renderInfoPage() {
       <div class="info-emergency-note">${INSURANCE_PHONE.replace('+33','+33 ')} · <b>Choix 1</b> · 24h/24, 365j/an</div>
       <div class="info-emergency-warn">⚠️ Appeler Chubb <b>AVANT</b> d'engager les frais en cas d'hospitalisation, soins spécialisés ou rapatriement.</div>
     </div>
+
+    ${insuranceDocCardHtml()}
 
     <div class="info-card">
       <div class="info-card-title">📇 Autres contacts</div>
@@ -1163,6 +1280,16 @@ function renderInfoPage() {
     box.addEventListener('click', toggle);
     box.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
   });
+
+  // Attestation : upload / download / remplacer / supprimer
+  const upInput  = leftEl.querySelector('#insurUploadInput');
+  const repInput = leftEl.querySelector('#insurReplaceInput');
+  const dlBtn    = leftEl.querySelector('#insurDownloadBtn');
+  const rmBtn    = leftEl.querySelector('#insurRemoveBtn');
+  if (upInput)  upInput.addEventListener('change', e => handleInsuranceUpload(e.target.files[0]));
+  if (repInput) repInput.addEventListener('change', e => handleInsuranceUpload(e.target.files[0]));
+  if (dlBtn)    dlBtn.addEventListener('click', downloadInsuranceDoc);
+  if (rmBtn)    rmBtn.addEventListener('click', removeInsuranceDoc);
 }
 
 // ── Map Page Render (Carte & itinéraires) ─────────────────────────────────────
@@ -2138,6 +2265,7 @@ async function setupFirebase(config) {
     subscribeToExpenses(db, collection, onSnapshot);
     subscribeToPeople(db, collection, onSnapshot);
     subscribeToPhrasesUpdates(db, collection, onSnapshot);
+    subscribeToDocuments(db, collection, onSnapshot);
 
     updateSyncStatus('online');
     showToast('🔥 Synchronisation Firebase active');
@@ -2265,6 +2393,27 @@ function subscribeToPhrasesUpdates(db, collection, onSnapshot) {
     },
     (error) => {
       console.error('Firestore subscription error (phrases):', error);
+    }
+  );
+}
+
+function subscribeToDocuments(db, collection, onSnapshot) {
+  onSnapshot(
+    collection(db, 'documents'),
+    (snap) => {
+      let found = null;
+      snap.forEach(docSnap => {
+        if (docSnap.id === 'attestation') {
+          const d = docSnap.data();
+          if (d && d.dataUrl) found = { name: d.name || 'attestation.pdf', size: d.size || 0, dataUrl: d.dataUrl, uploadedAt: d.uploadedAt || 0 };
+        }
+      });
+      state.insuranceDoc = found;
+      saveInsuranceDocToLocalStorage();
+      if (state.isInfoPage) renderInfoPage();
+    },
+    (error) => {
+      console.error('Firestore subscription error (documents):', error);
     }
   );
 }
@@ -2557,6 +2706,7 @@ async function init() {
   loadExpensesFromLocalStorage();
   loadPeopleFromLocalStorage();
   loadPhrasesFromLocalStorage();
+  loadInsuranceDocFromLocalStorage();
 
   // Setup event listeners
   document.querySelectorAll('.city-btn').forEach(btn => {

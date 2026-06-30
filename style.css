@@ -2389,3 +2389,69 @@ button { border: none; background: none; cursor: pointer; font-family: inherit; 
   gap: 8px;
   flex-wrap: wrap;
 }
+
+/* Carte attestation (PDF partagé) */
+.info-doc-card { border-left: 4px solid #1565C0; }
+.info-doc-empty {
+  font-size: 0.8rem;
+  color: var(--ink);
+  line-height: 1.45;
+  margin-bottom: 10px;
+}
+.info-doc-file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid var(--cream-dark);
+  border-radius: 8px;
+  padding: 9px 11px;
+  margin-bottom: 10px;
+}
+.info-doc-ico { font-size: 1.5rem; flex-shrink: 0; }
+.info-doc-meta { display: flex; flex-direction: column; min-width: 0; }
+.info-doc-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink);
+  word-break: break-word;
+}
+.info-doc-sub { font-size: 0.68rem; color: var(--ink-light); }
+.info-doc-download {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: linear-gradient(135deg, #1565C0 0%, #1E88E5 100%);
+  color: #fff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: center;
+  box-shadow: 0 3px 10px rgba(21,101,192,0.3);
+  transition: transform 0.12s;
+}
+.info-doc-download:active { transform: scale(0.98); }
+.info-doc-hint { font-size: 0.68rem; color: var(--ink-light); margin-top: 8px; text-align: center; }
+.info-doc-actions {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  margin-top: 10px;
+}
+.info-doc-link {
+  background: none;
+  border: none;
+  color: #1565C0;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 2px;
+}
+.info-doc-link.danger { color: var(--red); }
+.info-doc-link:hover { text-decoration: underline; }
