@@ -22,7 +22,7 @@ const state = {
   expenses: {},          // expenseId → personal expense record (synced)
   peopleNames: {},       // personId → custom display name (synced)
   phrases: {},           // phraseId → {id, section, fr, jp, ro}
-  insuranceDoc: null,    // { name, size, dataUrl, uploadedAt } – attestation partagée
+  insuranceDocs: {},     // docId → { id, name, size, dataUrl, uploadedAt } – attestations partagées
   isOnline: false,
   isTipsPage: false,
   isCalendarPage: false,
@@ -1055,39 +1055,55 @@ function saveInsuranceChecks(c) {
   try { localStorage.setItem('japon2026_insurance_check_v1', JSON.stringify(c)); } catch {}
 }
 
-// ── Attestation d'assurance (PDF partagé) ─────────────────────────────────────
+// ── Attestations d'assurance (PDF partagés – plusieurs possibles) ─────────────
 const INSURANCE_DOC_MAX = 700 * 1024; // 700 Ko (limite Firestore ~1 Mo après base64)
 
-function loadInsuranceDocFromLocalStorage() {
+function loadInsuranceDocsFromLocalStorage() {
   try {
-    const raw = localStorage.getItem('japon2026_insurance_doc_v1');
+    const raw = localStorage.getItem('japon2026_insurance_docs_v1');
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && parsed.dataUrl) { state.insuranceDoc = parsed; return; }
+      if (parsed && typeof parsed === 'object') { state.insuranceDocs = parsed; return; }
     }
-  } catch (e) { console.warn('LocalStorage read error (insuranceDoc):', e); }
-  state.insuranceDoc = null;
+    // Migration depuis l'ancien format (un seul document)
+    const old = localStorage.getItem('japon2026_insurance_doc_v1');
+    if (old) {
+      const d = JSON.parse(old);
+      if (d && d.dataUrl) {
+        const id = 'doc_migr';
+        state.insuranceDocs = { [id]: { id, ...d } };
+        localStorage.removeItem('japon2026_insurance_doc_v1');
+        return;
+      }
+    }
+  } catch (e) { console.warn('LocalStorage read error (insuranceDocs):', e); }
+  state.insuranceDocs = {};
 }
 
-function saveInsuranceDocToLocalStorage() {
+function saveInsuranceDocsToLocalStorage() {
   try {
-    if (state.insuranceDoc) localStorage.setItem('japon2026_insurance_doc_v1', JSON.stringify(state.insuranceDoc));
-    else localStorage.removeItem('japon2026_insurance_doc_v1');
-  } catch (e) { console.warn('LocalStorage write error (insuranceDoc):', e); }
+    localStorage.setItem('japon2026_insurance_docs_v1', JSON.stringify(state.insuranceDocs));
+  } catch (e) { console.warn('LocalStorage write error (insuranceDocs):', e); }
 }
 
-async function persistInsuranceDoc(rec) {
+function getInsuranceDocsSorted() {
+  return Object.values(state.insuranceDocs)
+    .filter(d => d && d.dataUrl)
+    .sort((a, b) => (a.uploadedAt ?? 0) - (b.uploadedAt ?? 0));
+}
+
+async function persistInsuranceDoc(id, rec) {
   if (db) {
     try {
       const { doc, setDoc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-      if (rec) await setDoc(doc(db, 'documents', 'attestation'), rec);
-      else     await deleteDoc(doc(db, 'documents', 'attestation'));
+      if (rec) await setDoc(doc(db, 'documents', id), rec);
+      else     await deleteDoc(doc(db, 'documents', id));
     } catch (e) {
-      console.error('Firestore write error (insuranceDoc):', e);
-      saveInsuranceDocToLocalStorage();
+      console.error('Firestore write error (documents):', e);
+      saveInsuranceDocsToLocalStorage();
     }
   } else {
-    saveInsuranceDocToLocalStorage();
+    saveInsuranceDocsToLocalStorage();
   }
 }
 
@@ -1103,70 +1119,101 @@ function handleInsuranceUpload(file) {
   }
   const reader = new FileReader();
   reader.onload = async () => {
+    const id = 'doc_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
     const rec = {
+      id,
       name: file.name || 'attestation.pdf',
       size: file.size,
       dataUrl: reader.result,
       uploadedAt: Date.now(),
     };
-    state.insuranceDoc = rec;
-    saveInsuranceDocToLocalStorage();
+    state.insuranceDocs[id] = rec;
+    saveInsuranceDocsToLocalStorage();
     renderInfoPage();
     showToast('📄 Attestation ajoutée et partagée !');
-    await persistInsuranceDoc(rec);
+    await persistInsuranceDoc(id, rec);
   };
   reader.onerror = () => showToast('⚠️ Erreur de lecture du fichier');
   reader.readAsDataURL(file);
 }
 
-function downloadInsuranceDoc() {
-  const d = state.insuranceDoc;
-  if (!d || !d.dataUrl) return;
-  const a = document.createElement('a');
-  a.href = d.dataUrl;
-  a.download = d.name || 'attestation.pdf';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+// Convertit une data-URL en Blob (pour un téléchargement fiable, y compris iOS)
+function dataUrlToBlob(dataUrl) {
+  const [head, b64] = dataUrl.split(',');
+  const mime = (head.match(/:(.*?);/) || [])[1] || 'application/pdf';
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
 }
 
-async function removeInsuranceDoc() {
-  if (!confirm('Supprimer l\'attestation partagée ?')) return;
-  state.insuranceDoc = null;
-  saveInsuranceDocToLocalStorage();
+function openInsuranceDoc(id) {
+  const d = state.insuranceDocs[id];
+  if (!d || !d.dataUrl) return;
+  try {
+    const url = URL.createObjectURL(dataUrlToBlob(d.dataUrl));
+    // Tente le téléchargement (desktop / Android)
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = d.name || 'attestation.pdf';
+    a.target = '_blank';
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    // Fallback iOS : ouvre le PDF dans un onglet (permet « Partager → Enregistrer »)
+    setTimeout(() => {
+      const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      if (isIOS) window.open(url, '_blank');
+    }, 150);
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (e) {
+    console.error('open doc error', e);
+    // Dernier recours : la data-URL directe
+    window.open(d.dataUrl, '_blank');
+  }
+}
+
+async function removeInsuranceDoc(id) {
+  const d = state.insuranceDocs[id];
+  if (!d) return;
+  if (!confirm(`Supprimer « ${d.name || 'cette attestation'} » ?`)) return;
+  delete state.insuranceDocs[id];
+  saveInsuranceDocsToLocalStorage();
   renderInfoPage();
   showToast('🗑️ Attestation supprimée');
-  await persistInsuranceDoc(null);
+  await persistInsuranceDoc(id, null);
 }
 
 function insuranceDocCardHtml() {
-  const d = state.insuranceDoc;
-  if (d && d.dataUrl) {
-    const kb = Math.max(1, Math.round((d.size || 0) / 1024));
-    return `<div class="info-card info-doc-card">
-      <div class="info-card-title">📄 Attestation d'assurance</div>
-      <div class="info-doc-file">
+  const docs = getInsuranceDocsSorted();
+  let inner = `<div class="info-card-title">📄 Attestations d'assurance</div>`;
+
+  if (docs.length === 0) {
+    inner += `<p class="info-doc-empty">Ajoutez un ou plusieurs PDF : ils seront <b>partagés avec tout le groupe</b> et téléchargeables hors-ligne en cas de problème.</p>`;
+  } else {
+    inner += `<div class="info-doc-list">`;
+    docs.forEach(d => {
+      const kb = Math.max(1, Math.round((d.size || 0) / 1024));
+      inner += `<div class="info-doc-file">
         <span class="info-doc-ico">📑</span>
         <span class="info-doc-meta">
           <span class="info-doc-name">${escapeHtml(d.name || 'attestation.pdf')}</span>
-          <span class="info-doc-sub">${kb} Ko · partagée avec le groupe</span>
+          <span class="info-doc-sub">${kb} Ko · partagé avec le groupe</span>
         </span>
-      </div>
-      <button class="info-doc-download" id="insurDownloadBtn">⬇️ Télécharger l'attestation</button>
-      <div class="info-doc-actions">
-        <label class="info-doc-link" for="insurReplaceInput">🔄 Remplacer</label>
-        <input type="file" id="insurReplaceInput" accept="application/pdf,.pdf" hidden />
-        <button class="info-doc-link danger" id="insurRemoveBtn">🗑️ Supprimer</button>
-      </div>
-    </div>`;
+        <button class="info-doc-open" data-doc-open="${d.id}" title="Ouvrir / télécharger">⬇️</button>
+        <button class="info-doc-del" data-doc-del="${d.id}" title="Supprimer">🗑️</button>
+      </div>`;
+    });
+    inner += `</div>`;
   }
-  return `<div class="info-card info-doc-card">
-    <div class="info-card-title">📄 Attestation d'assurance</div>
-    <p class="info-doc-empty">Ajoutez le PDF de l'attestation : il sera <b>partagé avec tout le groupe</b> et téléchargeable hors-ligne en cas de problème.</p>
-    <label class="info-doc-download" for="insurUploadInput">⬆️ Ajouter l'attestation (PDF)</label>
+
+  inner += `
+    <label class="info-doc-download" for="insurUploadInput">⬆️ ${docs.length ? 'Ajouter une autre attestation' : 'Ajouter une attestation (PDF)'}</label>
     <input type="file" id="insurUploadInput" accept="application/pdf,.pdf" hidden />
-    <p class="info-doc-hint">PDF · 700 Ko max. Pensez à la version anglaise si disponible.</p>
-  </div>`;
+    <p class="info-doc-hint">PDF · 700 Ko max chacun. Astuce : sur iPhone, le fichier s'ouvre → « Partager » pour l'enregistrer dans Fichiers.</p>`;
+
+  return `<div class="info-card info-doc-card">${inner}</div>`;
 }
 
 function renderInfoPage() {
@@ -1281,15 +1328,15 @@ function renderInfoPage() {
     box.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
   });
 
-  // Attestation : upload / download / remplacer / supprimer
-  const upInput  = leftEl.querySelector('#insurUploadInput');
-  const repInput = leftEl.querySelector('#insurReplaceInput');
-  const dlBtn    = leftEl.querySelector('#insurDownloadBtn');
-  const rmBtn    = leftEl.querySelector('#insurRemoveBtn');
-  if (upInput)  upInput.addEventListener('change', e => handleInsuranceUpload(e.target.files[0]));
-  if (repInput) repInput.addEventListener('change', e => handleInsuranceUpload(e.target.files[0]));
-  if (dlBtn)    dlBtn.addEventListener('click', downloadInsuranceDoc);
-  if (rmBtn)    rmBtn.addEventListener('click', removeInsuranceDoc);
+  // Attestations : upload / ouvrir-télécharger / supprimer
+  const upInput = leftEl.querySelector('#insurUploadInput');
+  if (upInput) upInput.addEventListener('change', e => { handleInsuranceUpload(e.target.files[0]); e.target.value = ''; });
+  leftEl.querySelectorAll('.info-doc-open[data-doc-open]').forEach(btn => {
+    btn.addEventListener('click', () => openInsuranceDoc(btn.dataset.docOpen));
+  });
+  leftEl.querySelectorAll('.info-doc-del[data-doc-del]').forEach(btn => {
+    btn.addEventListener('click', () => removeInsuranceDoc(btn.dataset.docDel));
+  });
 }
 
 // ── Map Page Render (Carte & itinéraires) ─────────────────────────────────────
@@ -2401,15 +2448,21 @@ function subscribeToDocuments(db, collection, onSnapshot) {
   onSnapshot(
     collection(db, 'documents'),
     (snap) => {
-      let found = null;
+      const fresh = {};
       snap.forEach(docSnap => {
-        if (docSnap.id === 'attestation') {
-          const d = docSnap.data();
-          if (d && d.dataUrl) found = { name: d.name || 'attestation.pdf', size: d.size || 0, dataUrl: d.dataUrl, uploadedAt: d.uploadedAt || 0 };
+        const d = docSnap.data();
+        if (d && d.dataUrl) {
+          fresh[docSnap.id] = {
+            id: docSnap.id,
+            name: d.name || 'attestation.pdf',
+            size: d.size || 0,
+            dataUrl: d.dataUrl,
+            uploadedAt: d.uploadedAt || 0,
+          };
         }
       });
-      state.insuranceDoc = found;
-      saveInsuranceDocToLocalStorage();
+      state.insuranceDocs = fresh;
+      saveInsuranceDocsToLocalStorage();
       if (state.isInfoPage) renderInfoPage();
     },
     (error) => {
@@ -2706,7 +2759,7 @@ async function init() {
   loadExpensesFromLocalStorage();
   loadPeopleFromLocalStorage();
   loadPhrasesFromLocalStorage();
-  loadInsuranceDocFromLocalStorage();
+  loadInsuranceDocsFromLocalStorage();
 
   // Setup event listeners
   document.querySelectorAll('.city-btn').forEach(btn => {
