@@ -52,6 +52,28 @@ function getGlobalDayIndex(day) {
   return ALL_DAYS.findIndex(d => d.id === day.id);
 }
 
+// Sélectionne automatiquement le jour correspondant à la date du jour
+// (ou le 1er jour avant le voyage, le dernier après, le prochain jour pendant).
+function selectTodayDay() {
+  if (!ALL_DAYS.length) return;
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+  let target = ALL_DAYS.find(d => d.date === todayStr);
+  if (!target) {
+    const first = ALL_DAYS[0];
+    const last  = ALL_DAYS[ALL_DAYS.length - 1];
+    if (todayStr < first.date)      target = first;
+    else if (todayStr > last.date)  target = last;
+    else target = ALL_DAYS.find(d => d.date >= todayStr) || last; // jour "trou" → prochain
+  }
+  if (!target) return;
+
+  state.currentCity = target.city;
+  const idx = TRIP[target.city].days.findIndex(d => d.id === target.id);
+  state.currentDayIndex = idx >= 0 ? idx : 0;
+}
+
 function getCityForDay(day) {
   return TRIP[day.city];
 }
@@ -2804,6 +2826,9 @@ async function init() {
 
   // Tab drag reorder
   initTabReorder();
+
+  // Ouvre sur le jour d'aujourd'hui (si on est pendant le voyage)
+  selectTodayDay();
 
   // Initial render
   renderBook();
