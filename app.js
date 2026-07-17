@@ -4,7 +4,7 @@
  */
 
 // ── Données statiques (itinéraire, phrases, voyageurs) ──────────────────────────
-import { CAT_EMOJI, DAY_TYPE_CONFIG, TRIP, ALL_DAYS, SEED_ACTIVITIES, CATEGORIES, CITY_CAL_COLORS, PEOPLE, PHRASES } from './data.js';
+import { CAT_EMOJI, DAY_TYPE_CONFIG, TRIP, ALL_DAYS, SEED_ACTIVITIES, CATEGORIES, CITY_CAL_COLORS, PEOPLE, PHRASES, DAY_PROGRAMS } from './data.js';
 
 // ── Firebase state ────────────────────────────────────────────────────────────
 let firebaseApp = null;
@@ -566,6 +566,16 @@ function renderRightPage(day) {
   const acts = getDayActivities(day.id);
   let html = `<div class="activities-header">Programme du jour</div>`;
 
+  // Programme détaillé (recap) si disponible pour ce jour
+  const prog = DAY_PROGRAMS[day.id];
+  if (prog) {
+    html += `<button class="day-program-btn" data-program-day="${day.id}">
+      <span class="dpb-emoji">${prog.emoji || '📋'}</span>
+      <span class="dpb-text">${escapeHtml(prog.title || 'Programme détaillé')}</span>
+      <span class="dpb-go">›</span>
+    </button>`;
+  }
+
   if (acts.length === 0) {
     html += `<p class="no-activity">Aucune activité planifiée. Ajoutez-en une ci-dessous !</p>`;
   } else {
@@ -661,6 +671,10 @@ function renderRightPage(day) {
       deleteActivity(btn.dataset.delId);
     });
   });
+
+  // Programme détaillé listener
+  const progBtn = document.querySelector('.day-program-btn[data-program-day]');
+  if (progBtn) progBtn.addEventListener('click', () => openProgramOverlay(progBtn.dataset.programDay));
 
   // Add-activity listener
   const addBtn = document.querySelector('.add-activity-btn[data-add-day]');
@@ -901,6 +915,15 @@ function renderCalendarDayDetail(days, container) {
     html += `<div class="day-type-banner day-type-${mainDay.type}" style="background:${typeConfig.bg};color:${typeConfig.color};">${typeConfig.label}</div>`;
   }
 
+  const progCal = DAY_PROGRAMS[mainDay.id];
+  if (progCal) {
+    html += `<button class="day-program-btn" data-program-day="${mainDay.id}">
+      <span class="dpb-emoji">${progCal.emoji || '📋'}</span>
+      <span class="dpb-text">${escapeHtml(progCal.title || 'Programme détaillé')}</span>
+      <span class="dpb-go">›</span>
+    </button>`;
+  }
+
   if (allActs.length === 0) {
     html += `<p class="no-activity">Aucune activité planifiée. Ajoutez-en une ci-dessous !</p>`;
   } else {
@@ -946,6 +969,9 @@ function renderCalendarDayDetail(days, container) {
       <span class="add-icon">＋</span> Ajouter une activité
     </button>`;
   container.innerHTML = html;
+
+  const progBtnCal = container.querySelector('.day-program-btn[data-program-day]');
+  if (progBtnCal) progBtnCal.addEventListener('click', () => openProgramOverlay(progBtnCal.dataset.programDay));
 
   container.querySelectorAll('.act-checkbox[data-act-id]').forEach(cb => {
     const actId = cb.dataset.actId;
@@ -1543,6 +1569,49 @@ function speakJapanese(text, btn) {
     // Fallback: speak anyway after 300 ms if event never fires (some browsers)
     setTimeout(() => { if (btn?.disabled) doSpeak(); }, 300);
   }
+}
+
+// ── Overlay Programme détaillé (recap plein écran) ────────────────────────────
+function injectProgramOverlay() {
+  if (document.getElementById('programOverlay')) return;
+  const ov = document.createElement('div');
+  ov.className = 'program-overlay';
+  ov.id = 'programOverlay';
+  ov.hidden = true;
+  ov.innerHTML = `
+    <div class="program-topbar">
+      <span class="program-topbar-title" id="programTitle">Programme</span>
+      <button class="program-close" id="programClose" aria-label="Fermer">✕ Fermer</button>
+    </div>
+    <iframe class="program-frame" id="programFrame" title="Programme détaillé" sandbox="allow-same-origin allow-popups"></iframe>
+  `;
+  document.body.appendChild(ov);
+  ov.querySelector('#programClose').addEventListener('click', closeProgramOverlay);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !ov.hidden) closeProgramOverlay(); });
+}
+
+function openProgramOverlay(dayId) {
+  const prog = DAY_PROGRAMS[dayId];
+  const ov = document.getElementById('programOverlay');
+  if (!prog || !ov) return;
+  ov.querySelector('#programTitle').textContent = `${prog.emoji || ''} ${prog.title || 'Programme'}`.trim();
+  const frame = ov.querySelector('#programFrame');
+  frame.srcdoc = prog.html;
+  ov.hidden = false;
+  requestAnimationFrame(() => ov.classList.add('show'));
+  document.body.style.overflow = 'hidden';
+}
+
+function closeProgramOverlay() {
+  const ov = document.getElementById('programOverlay');
+  if (!ov) return;
+  ov.classList.remove('show');
+  document.body.style.overflow = '';
+  setTimeout(() => {
+    ov.hidden = true;
+    const frame = ov.querySelector('#programFrame');
+    if (frame) frame.srcdoc = '';
+  }, 250);
 }
 
 // ── Phrase Modal ───────────────────────────────────────────────────────────────
@@ -2820,6 +2889,7 @@ async function init() {
   injectExpenseModal();
   injectDetailSheet();
   injectPhraseModal();
+  injectProgramOverlay();
 
   // Smart scroll-hide header
   initScrollHeader();

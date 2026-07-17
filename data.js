@@ -470,4 +470,403 @@ const PHRASES = [
   },
 ];
 
-export { CAT_EMOJI, DAY_TYPE_CONFIG, TRIP, ALL_DAYS, SEED_ACTIVITIES, CATEGORIES, CITY_CAL_COLORS, PEOPLE, PHRASES };
+// ── Programmes détaillés par jour (recaps riches) ────────────────────────────
+const DAY_PROGRAMS = {
+  'osa-18': {
+    emoji: '🎢',
+    title: 'Programme détaillé — USJ',
+    html: `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>USJ – Programme de la journée</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Syne:wght@700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0d0d1a;
+    font-family: 'Nunito', sans-serif;
+    color: #f0eeff;
+    min-height: 100vh;
+    padding: 24px 16px 40px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  header .emoji-title {
+    font-size: 2.4rem;
+    margin-bottom: 6px;
+  }
+
+  header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    color: #ffffff;
+    text-transform: uppercase;
+  }
+
+  header p {
+    font-size: 0.85rem;
+    color: #9b8fc4;
+    margin-top: 4px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 28px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+  }
+
+  .badge-joe    { background: rgba(99,179,237,0.15); color: #63b3ed; border: 1px solid #63b3ed44; }
+  .badge-gaelle { background: rgba(246,135,179,0.15); color: #f687b3; border: 1px solid #f687b344; }
+  .badge-tout   { background: rgba(154,215,85,0.15);  color: #9ad755; border: 1px solid #9ad75544; }
+
+  .timeline {
+    position: relative;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 28px;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, #7c3aed, #ec4899, #f59e0b, #10b981);
+    opacity: 0.35;
+  }
+
+  .step {
+    position: relative;
+    padding-left: 68px;
+    margin-bottom: 22px;
+  }
+
+  .step-num {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    font-weight: 900;
+    line-height: 1;
+    z-index: 1;
+  }
+
+  .step-num span {
+    font-size: 0.62rem;
+    font-weight: 700;
+    opacity: 0.7;
+    letter-spacing: 0.04em;
+    margin-top: 1px;
+  }
+
+  .card {
+    background: rgba(255,255,255,0.05);
+    border-radius: 16px;
+    padding: 14px 16px;
+    border: 1px solid rgba(255,255,255,0.07);
+    backdrop-filter: blur(6px);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    color: #ffffff;
+    flex: 1;
+  }
+
+  .zone-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .card-body {
+    font-size: 0.83rem;
+    color: #c4b8e8;
+    line-height: 1.55;
+  }
+
+  .card-body .who {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .tag {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 12px;
+  }
+
+  .tag-joe    { background: rgba(99,179,237,0.18); color: #63b3ed; }
+  .tag-graziella { background: rgba(129,140,248,0.2); color: #a5b4fc; }
+  .tag-gaelle { background: rgba(246,135,179,0.18); color: #f687b3; }
+  .tag-thomas { background: rgba(251,191,36,0.18);  color: #fbbf24; }
+  .tag-tous   { background: rgba(154,215,85,0.15); color: #9ad755; }
+
+  .alert {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    margin-top: 9px;
+    padding: 6px 10px;
+    border-radius: 10px;
+  }
+
+  .alert-time  { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid #fbbf2430; }
+  .alert-fp    { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid #34d39930; }
+  .alert-split { background: rgba(236,72,153,0.1);  color: #f9a8d4; border: 1px solid #f9a8d430; }
+  .alert-rdv   { background: rgba(99,179,237,0.12); color: #93c5fd; border: 1px solid #93c5fd30; }
+
+  .divider-rdv {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 6px 0 20px;
+    padding-left: 68px;
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .divider-rdv::before, .divider-rdv::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+  }
+
+  .divider-rdv span {
+    font-size: 0.73rem;
+    color: #9ad755;
+    font-weight: 700;
+    white-space: nowrap;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .s1 .step-num { background: rgba(253,186,116,0.15); color: #fdba74; }
+  .s1 .zone-label { background: rgba(253,186,116,0.15); color: #fdba74; }
+  .s1 .card { border-color: rgba(253,186,116,0.12); }
+
+  .s2 .step-num { background: rgba(167,139,250,0.15); color: #c4b5fd; }
+  .s2 .zone-label { background: rgba(167,139,250,0.15); color: #c4b5fd; }
+  .s2 .card { border-color: rgba(167,139,250,0.12); }
+
+  .s3 .step-num { background: rgba(254,78,55,0.15); color: #fe4e37; }
+  .s3 .zone-label { background: rgba(254,78,55,0.15); color: #fe4e37; }
+  .s3 .card { border-color: rgba(254,78,55,0.12); }
+
+  .s4 .step-num { background: rgba(16,185,129,0.15); color: #34d399; }
+  .s4 .zone-label { background: rgba(16,185,129,0.15); color: #34d399; }
+  .s4 .card { border-color: rgba(16,185,129,0.12); }
+
+  .s5 .step-num { background: rgba(254,78,55,0.15); color: #fe4e37; }
+  .s5 .zone-label { background: rgba(254,78,55,0.15); color: #fe4e37; }
+  .s5 .card { border-color: rgba(254,78,55,0.12); }
+
+  .s6 .step-num { background: rgba(99,179,237,0.15); color: #63b3ed; }
+  .s6 .zone-label { background: rgba(99,179,237,0.15); color: #63b3ed; }
+  .s6 .card { border-color: rgba(99,179,237,0.12); }
+
+  footer {
+    text-align: center;
+    margin-top: 36px;
+    font-size: 0.75rem;
+    color: #6b5f8a;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="emoji-title">🎢</div>
+  <h1>Universal Studios Japan</h1>
+  <p>Programme de la journée</p>
+</header>
+
+<div class="legend">
+  <div class="badge badge-joe">🔵 Joe &amp; Graziella</div>
+  <div class="badge badge-gaelle">🩷 Gaëlle &amp; Thomas</div>
+  <div class="badge badge-tout">🟢 Tout le groupe</div>
+</div>
+
+<div class="timeline">
+
+  <div class="step s1">
+    <div class="step-num">🍌<span>01</span></div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Minion Park</div>
+        <div class="zone-label">Minion Park</div>
+      </div>
+      <div class="card-body">
+        Première zone du parc — attraction et ambiance Minions pour tout le monde !
+        <div class="who">
+          <span class="tag tag-tous">👥 Tout le groupe</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step s2">
+    <div class="step-num">⚡<span>02</span></div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Harry Potter – Forbidden Journey</div>
+        <div class="zone-label">Wizarding World</div>
+      </div>
+      <div class="card-body">
+        L'attraction phare du Wizarding World, puis repas dans la zone Harry Potter.
+        <div class="alert alert-time">🍽️ Déjeuner dans Harry Potter</div>
+        <div class="alert alert-time">⏰ 12h30 — Flight of the Hippogriff</div>
+        <div class="who">
+          <span class="tag tag-joe">Joe</span>
+          <span class="tag tag-graziella">Graziella</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step s3">
+    <div class="step-num">🍄<span>03</span></div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Séparation du groupe</div>
+        <div class="zone-label">Super Nintendo World</div>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-split">🔀 Le groupe se sépare</div>
+        <br/>
+        <strong style="color:#a5b4fc">🍄 Joe &amp; Graziella</strong> → Super Mario World
+        <div class="who" style="margin-bottom:12px">
+          <span class="tag tag-joe">Joe</span>
+          <span class="tag tag-graziella">Graziella</span>
+        </div>
+        <strong style="color:#f9a8d4">🐰 Gaëlle &amp; Thomas</strong> → Universal Wonderland
+        <div class="who">
+          <span class="tag tag-gaelle">Gaëlle</span>
+          <span class="tag tag-thomas">Thomas</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider-rdv">
+    <span>🎬 Retrouvailles à Hollywood</span>
+  </div>
+
+  <div class="step s4">
+    <div class="step-num">🦕<span>04</span></div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Jurassic Park</div>
+        <div class="zone-label">Jurassic World</div>
+      </div>
+      <div class="card-body">
+        Attraction avec Fast Pass — priorité d'accès !
+        <div class="alert alert-fp">⚡ Fast Pass</div>
+        <div class="who">
+          <span class="tag tag-joe">Joe</span>
+          <span class="tag tag-graziella">Graziella</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step s5">
+    <div class="step-num">🍄<span>05</span></div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Super Nintendo World</div>
+        <div class="zone-label">Super Nintendo World</div>
+      </div>
+      <div class="card-body">
+        Tour de Gaëlle &amp; Thomas dans Mario World.
+        <div class="alert alert-time">⏰ 19h00 – 20h00 · TAGJ</div>
+        <div class="who">
+          <span class="tag tag-gaelle">Gaëlle</span>
+          <span class="tag tag-thomas">Thomas</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step s6">
+    <div class="step-num">🌟<span>06</span></div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Amity Village</div>
+        <div class="zone-label">Amity Village</div>
+      </div>
+      <div class="card-body">
+        Fin de journée ensemble — dernier tour dans la zone Amity Village !
+        <div class="who">
+          <span class="tag tag-tous">👥 Tout le groupe</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>Universal Studios Japan · Recap journée</footer>
+
+</body>
+</html>`,
+  },
+};
+
+export { CAT_EMOJI, DAY_TYPE_CONFIG, TRIP, ALL_DAYS, SEED_ACTIVITIES, CATEGORIES, CITY_CAL_COLORS, PEOPLE, PHRASES, DAY_PROGRAMS };
