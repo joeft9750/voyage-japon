@@ -832,11 +832,15 @@ function renderCalendarPage() {
     calHtml += `<div class="cal-cell empty"></div>`;
   }
 
+  const _now = new Date();
+  const todayStr = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}-${String(_now.getDate()).padStart(2, '0')}`;
+
   for (let d = 1; d <= daysInJuly; d++) {
     const dateStr = `2026-07-${String(d).padStart(2, '0')}`;
     const days    = dateMap[dateStr] || [];
     const isTrip  = days.length > 0;
     const isSelected = state.selectedCalendarDayId === dateStr;
+    const isToday = dateStr === todayStr;
 
     let bgColor = '', fgColor = '', dotsHtml = '';
     if (isTrip) {
@@ -853,7 +857,7 @@ function renderCalendarPage() {
       }
     }
 
-    const cellClass = ['cal-cell', isTrip ? 'cal-cell--trip' : '', isSelected ? 'cal-cell--selected' : ''].filter(Boolean).join(' ');
+    const cellClass = ['cal-cell', isTrip ? 'cal-cell--trip' : '', isSelected ? 'cal-cell--selected' : '', isToday ? 'cal-cell--today' : ''].filter(Boolean).join(' ');
     const cellStyle = isTrip ? `style="background:${bgColor};color:${fgColor};"` : '';
     const calDate  = isTrip ? `data-cal-date="${dateStr}"` : '';
     const tipDays  = days.map(d => d.label).join(' + ');
@@ -861,6 +865,7 @@ function renderCalendarPage() {
     calHtml += `
       <div class="${cellClass}" ${calDate} ${cellStyle} role="${isTrip ? 'button' : ''}" tabindex="${isTrip ? '0' : '-1'}"${isTrip ? ` title="${tipDays}"` : ''}>
         <span class="cal-day-num">${d}</span>
+        ${isToday ? '<span class="cal-today-badge">Aujourd\'hui</span>' : ''}
         ${dotsHtml}
       </div>`;
   }
